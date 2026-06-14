@@ -1,0 +1,8 @@
+{
+ "doctype": "Page",
+ "page_name": "erpops_dashboard",
+ "name": "erpops_dashboard",
+ "title": "ErpOps Dashboard",
+ "module": "ErpOps",
+ "standard": "Yes"
+}
