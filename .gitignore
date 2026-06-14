@@ -28,9 +28,10 @@ Thumbs.db
 # Plan text
 plan.txt
 
-# Token management scripts
+# Token and setup scripts
 get_token.py
 auto_refresh_token.py
+run_setup_host.py
 
 # Docker volumes and local logs
 *.log

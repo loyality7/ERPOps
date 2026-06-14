@@ -13,7 +13,6 @@ A lightweight, automated integration between ERPNext (v15) and Shopify.
 
 *   `ErpOps/frappe_docker/` - Containerized multi-app ERPNext local deployment.
 *   `ErpOps/frappe_docker/apps/erpops/` - Custom Frappe backend/frontend code.
-*   `run_setup_host.py` - Auto-credentials config & webhook registration script.
 *   `auto_refresh_token.py` - Automated token refresh worker.
 
 ## Quick Setup
@@ -23,8 +22,4 @@ A lightweight, automated integration between ERPNext (v15) and Shopify.
 2.  **Start Services**:
     ```bash
     docker compose -f ErpOps/frappe_docker/pwd-custom.yml up -d
-    ```
-3.  **Run Host Setup**:
-    ```bash
-    python run_setup_host.py
     ```
