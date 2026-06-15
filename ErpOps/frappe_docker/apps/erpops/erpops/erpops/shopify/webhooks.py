@@ -10,6 +10,38 @@ import json
 import frappe
 
 
+def get_customer_group():
+    # Check Shopify Setting
+    group = frappe.db.get_single_value("Shopify Setting", "customer_group")
+    if group and frappe.db.exists("Customer Group", group):
+        return group
+    # Check Selling Settings default
+    group = frappe.db.get_single_value("Selling Settings", "customer_group")
+    if group and frappe.db.exists("Customer Group", group):
+        return group
+    # Fallback to standard non-group or first group
+    fallback = frappe.db.get_value("Customer Group", {"is_group": 0}, "name")
+    if not fallback:
+        fallback = frappe.db.get_value("Customer Group", {}, "name") or "All Customer Groups"
+    return fallback
+
+
+def get_item_group():
+    # Check Shopify Setting
+    group = frappe.db.get_single_value("Shopify Setting", "item_group")
+    if group and frappe.db.exists("Item Group", group):
+        return group
+    # Check Stock Settings default
+    group = frappe.db.get_single_value("Stock Settings", "default_item_group")
+    if group and frappe.db.exists("Item Group", group):
+        return group
+    # Fallback to standard non-group or first group
+    fallback = frappe.db.get_value("Item Group", {"is_group": 0}, "name")
+    if not fallback:
+        fallback = frappe.db.get_value("Item Group", {}, "name") or "All Item Groups"
+    return fallback
+
+
 def handle_webhook():
     """
     Entry point for all inbound Shopify webhooks.
@@ -196,7 +228,7 @@ def _resolve_customer(order):
 
     c = frappe.new_doc("Customer")
     c.customer_name = full_name
-    c.customer_group = "Shopify"
+    c.customer_group = get_customer_group()
     c.territory = "All Territories"
     c.flags.ignore_mandatory = True
     c.insert(ignore_permissions=True)
@@ -208,7 +240,7 @@ def _ensure_item_exists(item_code, item_name):
         item = frappe.new_doc("Item")
         item.item_code = item_code
         item.item_name = item_name or item_code
-        item.item_group = "Shopify Items"
+        item.item_group = get_item_group()
         item.is_stock_item = 1
         item.stock_uom = "Nos"
         item.flags.ignore_mandatory = True

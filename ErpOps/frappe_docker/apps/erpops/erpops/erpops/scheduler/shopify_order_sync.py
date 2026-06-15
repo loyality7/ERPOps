@@ -1,6 +1,38 @@
 import frappe
 
 
+def get_customer_group():
+    # Check Shopify Setting
+    group = frappe.db.get_single_value("Shopify Setting", "customer_group")
+    if group and frappe.db.exists("Customer Group", group):
+        return group
+    # Check Selling Settings default
+    group = frappe.db.get_single_value("Selling Settings", "customer_group")
+    if group and frappe.db.exists("Customer Group", group):
+        return group
+    # Fallback to standard non-group or first group
+    fallback = frappe.db.get_value("Customer Group", {"is_group": 0}, "name")
+    if not fallback:
+        fallback = frappe.db.get_value("Customer Group", {}, "name") or "All Customer Groups"
+    return fallback
+
+
+def get_item_group():
+    # Check Shopify Setting
+    group = frappe.db.get_single_value("Shopify Setting", "item_group")
+    if group and frappe.db.exists("Item Group", group):
+        return group
+    # Check Stock Settings default
+    group = frappe.db.get_single_value("Stock Settings", "default_item_group")
+    if group and frappe.db.exists("Item Group", group):
+        return group
+    # Fallback to standard non-group or first group
+    fallback = frappe.db.get_value("Item Group", {"is_group": 0}, "name")
+    if not fallback:
+        fallback = frappe.db.get_value("Item Group", {}, "name") or "All Item Groups"
+    return fallback
+
+
 def sync_shopify_orders():
     """Every 5 min: poll Shopify for new orders and create Sales Orders in ERPNext."""
     try:
@@ -72,7 +104,7 @@ def sync_shopify_products():
                     item = frappe.new_doc("Item")
                     item.item_code = sku
                     item.item_name = item_name
-                    item.item_group = "Shopify Items"
+                    item.item_group = get_item_group()
                     item.brand = vendor or "Generic"
                     item.is_stock_item = 1
                     item.stock_uom = "Nos"
@@ -100,7 +132,7 @@ def _create_sales_order_from_shopify(order):
     if not customer:
         c = frappe.new_doc("Customer")
         c.customer_name = customer_name
-        c.customer_group = "Shopify"
+        c.customer_group = get_customer_group()
         c.territory = "All Territories"
         c.flags.ignore_mandatory = True
         c.insert(ignore_permissions=True)
@@ -158,7 +190,7 @@ def _create_sales_order_from_shopify(order):
             item = frappe.new_doc("Item")
             item.item_code = item_code
             item.item_name = line.get("title", item_code)
-            item.item_group = "Shopify Items"
+            item.item_group = get_item_group()
             item.is_stock_item = 1
             item.stock_uom = "Nos"
             item.flags.ignore_mandatory = True
