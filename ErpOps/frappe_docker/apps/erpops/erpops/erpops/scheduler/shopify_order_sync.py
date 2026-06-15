@@ -144,6 +144,8 @@ def sync_shopify_products():
                     if variant_title and variant_title != "Default Title":
                         item_name = f"{title} - {variant_title}"
 
+                    image_url = p.get("featuredImage", {}).get("url") if p.get("featuredImage") else None
+
                     if not frappe.db.exists("Item", sku):
                         # Delete stale/conflicting Ecommerce Item mappings to prevent after_insert hook crashes
                         frappe.db.delete("Ecommerce Item", {"erpnext_item_code": sku})
@@ -168,8 +170,16 @@ def sync_shopify_products():
                         item.brand = brand_name
                         item.is_stock_item = 1
                         item.stock_uom = "Nos"
+                        if image_url:
+                            item.image = image_url
                         item.flags.ignore_mandatory = True
                         item.insert(ignore_permissions=True)
+                    else:
+                        if image_url:
+                            current_image = frappe.db.get_value("Item", sku, "image")
+                            if not current_image:
+                                frappe.db.set_value("Item", sku, "image", image_url)
+                                frappe.db.commit()
 
                     if clean_variant_id:
                         existing_mapping = frappe.db.get_value(

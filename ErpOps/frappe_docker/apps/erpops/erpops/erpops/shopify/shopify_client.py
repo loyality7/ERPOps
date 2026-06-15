@@ -346,6 +346,7 @@ class ShopifyClient:
           products(first: $limit) {
             nodes {
               id title vendor status totalInventory
+              featuredImage { url }
               variants(first: 10) {
                 nodes { id sku price compareAtPrice inventoryQuantity }
               }

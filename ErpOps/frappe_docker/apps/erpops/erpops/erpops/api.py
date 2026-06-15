@@ -599,7 +599,16 @@ def get_product_catalogue():
             if i.has_variants:
                 var_count = variant_counts.get(i.item_code, 0)
                 
-            shopify_id = mapping_map.get(i.item_code)
+            # If template has variants, check if any variant is mapped
+            shopify_id = None
+            if i.has_variants:
+                variants_list = frappe.get_all("Item", filters={"variant_of": i.item_code}, fields=["name"])
+                for v in variants_list:
+                    if v.name in mapping_map:
+                        shopify_id = mapping_map[v.name]
+                        break
+            else:
+                shopify_id = mapping_map.get(i.item_code)
             
             # Robust fallback for imported or numeric Shopify codes
             is_shopify_group = i.item_group == "Shopify Items"
