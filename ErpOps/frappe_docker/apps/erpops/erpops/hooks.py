@@ -7,8 +7,6 @@ app_license = "MIT"
 app_version = "0.0.1"
 app_logo_url = "/assets/erpops/images/logo.png"
 app_include_js = ["erpops.bundle.js"]
-app_include_css = ["/assets/erpops/css/erpops.css"]
-
 
 scheduler_events = {
     "all": [

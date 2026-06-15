@@ -440,125 +440,36 @@ window.render_erpops_orders = function(wrapper) {
     render_returns();
 };
 
-window.append_channels_to_sidebar = function() {
-    var sidebar_items = $('.desk-sidebar .sidebar-items');
-    if (sidebar_items.length && $('.sidebar-section-channels').length === 0) {
-        sidebar_items.append(`
-			<div class="sidebar-section-channels" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-				<div class="sidebar-section-title" style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; padding: 0 15px;">CHANNELS</div>
-				
-				<div class="channel-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; border-radius: 8px; margin: 0 10px;">
-					<div class="channel-info" id="channel-shopify-btn" style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex-grow: 1;">
-						<div class="channel-icon-wrapper" style="width: 28px; height: 28px; background-color: var(--fg-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color);">
-							<i class="fa fa-shopping-cart" style="color: var(--text-color); font-size: 13px;"></i>
-						</div>
-						<div class="channel-details" style="display: flex; flex-direction: column;">
-							<span class="channel-name" style="font-size: 13px; font-weight: 500; color: var(--text-color);">Shopify <i class="fa fa-check-circle text-success" style="font-size:10px;"></i></span>
-							<span class="channel-sync" style="font-size: 10px; color: var(--text-muted);">synced 2m ago</span>
-						</div>
-					</div>
-					<label class="switch-container" style="position: relative; display: inline-block; width: 18px; height: 18px; cursor: pointer; margin-bottom: 0;">
-						<input type="checkbox" checked id="toggle-shopify" style="opacity: 0; width: 0; height: 0;">
-						<span class="switch-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border-color); transition: .2s; border-radius: 50%;"></span>
-					</label>
-				</div>
-			</div>
-        `);
-
-        // Style the round checkbox toggler
-        var style = document.createElement('style');
-        style.innerHTML = `
-            .switch-container input:checked + .switch-slider {
-                background-color: #3b82f6 !important;
-                border-color: #3b82f6 !important;
-            }
-            .switch-container input:checked + .switch-slider:after {
-                content: "\\f00c";
-                font-family: FontAwesome;
-                color: white;
-                font-size: 9px;
-                position: absolute;
-                top: 4px;
-                left: 4px;
-            }
-            .channel-item:hover {
-                background-color: var(--bg-color);
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Bind events
-        $('#toggle-shopify').on('change', function() {
-            var active = $(this).prop('checked');
-            frappe.show_alert({
-                message: "Shopify Sync " + (active ? "Enabled" : "Disabled"),
-                indicator: active ? "green" : "orange"
-            });
-        });
-
-        $('#channel-shopify-btn').on('click', function() {
-            frappe.set_route('Form', 'Shopify Settings');
-        });
-    }
-};
-
 $(document).ready(function() {
     console.log("Alaiy OS Global Router loaded.");
     
     var check_and_render = function() {
-        // Append Channels to native sidebar
-        if (typeof frappe !== 'undefined') {
-            window.append_channels_to_sidebar();
-        }
-
         if (typeof frappe !== 'undefined' && typeof frappe.get_route_str === 'function') {
             var route = frappe.get_route_str() || "";
             var route_lower = route.toLowerCase();
             
-            var max_attempts = 20;
-            var attempts = 0;
-
             if (route_lower === 'workspaces/inventory' || 
                 route_lower === 'workspace/inventory' || 
                 route_lower === 'inventory') {
                 
-                var interval = setInterval(function() {
-                    var wrapper = frappe.container.page && frappe.container.page.wrapper;
-                    if (wrapper) {
-                        var main_section = $(wrapper).find('.layout-main-section');
-                        if (main_section.length && (main_section.find('.standard-dashboard-section').length || main_section.children().length > 0)) {
-                            clearInterval(interval);
-                            if (main_section.find('.erpops-inventory-container').length === 0) {
-                                console.log("Injecting custom Product Catalogue into Workspace...");
-                                window.render_erpops_inventory(wrapper);
-                            }
-                            return;
-                        }
-                    }
-                    attempts++;
-                    if (attempts >= max_attempts) clearInterval(interval);
-                }, 100);
-
+                var wrapper = frappe.container.page.wrapper;
+                if (wrapper && $(wrapper).find('.erpops-inventory-container').length === 0) {
+                    console.log("Injecting custom Product Catalogue into Workspace layout...");
+                    frappe.require("/assets/erpops/css/inventory_page.css", function() {
+                        window.render_erpops_inventory(wrapper);
+                    });
+                }
             } else if (route_lower === 'workspaces/orders' || 
                        route_lower === 'workspace/orders' || 
                        route_lower === 'orders') {
                 
-                var interval = setInterval(function() {
-                    var wrapper = frappe.container.page && frappe.container.page.wrapper;
-                    if (wrapper) {
-                        var main_section = $(wrapper).find('.layout-main-section');
-                        if (main_section.length && (main_section.find('.standard-dashboard-section').length || main_section.children().length > 0)) {
-                            clearInterval(interval);
-                            if (main_section.find('.erpops-tabs-header').length === 0) {
-                                console.log("Injecting custom Orders panel into Workspace...");
-                                window.render_erpops_orders(wrapper);
-                            }
-                            return;
-                        }
-                    }
-                    attempts++;
-                    if (attempts >= max_attempts) clearInterval(interval);
-                }, 100);
+                var wrapper = frappe.container.page.wrapper;
+                if (wrapper && $(wrapper).find('.erpops-tabs-header').length === 0) {
+                    console.log("Injecting custom Orders & Returns panel into Workspace layout...");
+                    frappe.require("/assets/erpops/css/inventory_page.css", function() {
+                        window.render_erpops_orders(wrapper);
+                    });
+                }
             }
         }
     };
