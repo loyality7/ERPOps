@@ -105,7 +105,8 @@ def sync_shopify_orders():
                     created += 1
                     frappe.db.commit()
                 except Exception as ord_err:
-                    frappe.log_error(title="Shopify Order Sync", message=f"Failed to sync Shopify Order {order.get('name')}: {ord_err}")
+                    import traceback
+                    frappe.log_error(title="Shopify Order Sync", message=f"Failed to sync Shopify Order {order.get('name')}: {ord_err}\n\n{traceback.format_exc()}")
 
         try:
             frappe.db.set_single_value("Shopify Setting", "last_inventory_sync", frappe.utils.now_datetime())
