@@ -618,6 +618,11 @@ $(document).ready(function() {
     console.log("Alaiy OS Global Router loaded.");
     
     var check_and_render = function() {
+        if (window.erpops_route_interval) {
+            clearInterval(window.erpops_route_interval);
+            window.erpops_route_interval = null;
+        }
+
         if (typeof frappe !== 'undefined' && typeof frappe.get_route_str === 'function') {
             var route = frappe.get_route_str() || "";
             var route_lower = route.toLowerCase();
@@ -628,12 +633,12 @@ $(document).ready(function() {
                 route_lower === 'inventory') {
                 
                 var attempts = 0;
-                var interval = setInterval(function() {
+                window.erpops_route_interval = setInterval(function() {
                     attempts++;
                     var wrapper = $('.page-container:visible')[0];
                     console.log("[Alaiy OS Router] Checking Inventory wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
-                        clearInterval(interval);
+                        clearInterval(window.erpops_route_interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
                         if ($(wrapper).find('.erpops-inventory-container').length === 0) {
                             console.log("Injecting custom Product Catalogue into Workspace layout...");
@@ -643,7 +648,7 @@ $(document).ready(function() {
                         }
                     }
                     if (attempts > 50) {
-                        clearInterval(interval);
+                        clearInterval(window.erpops_route_interval);
                     }
                 }, 100);
                 
@@ -652,12 +657,12 @@ $(document).ready(function() {
                        route_lower === 'orders') {
                 
                 var attempts = 0;
-                var interval = setInterval(function() {
+                window.erpops_route_interval = setInterval(function() {
                     attempts++;
                     var wrapper = $('.page-container:visible')[0];
                     console.log("[Alaiy OS Router] Checking Orders wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
-                        clearInterval(interval);
+                        clearInterval(window.erpops_route_interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
                         if ($(wrapper).find('.erpops-tabs-header').length === 0) {
                             console.log("Injecting custom Orders & Returns panel into Workspace layout...");
@@ -667,7 +672,7 @@ $(document).ready(function() {
                         }
                     }
                     if (attempts > 50) {
-                        clearInterval(interval);
+                        clearInterval(window.erpops_route_interval);
                     }
                 }, 100);
             } else if (route_lower === 'workspaces/channels' || 
@@ -675,12 +680,12 @@ $(document).ready(function() {
                        route_lower === 'channels') {
                 
                 var attempts = 0;
-                var interval = setInterval(function() {
+                window.erpops_route_interval = setInterval(function() {
                     attempts++;
                     var wrapper = $('.page-container:visible')[0];
                     console.log("[Alaiy OS Router] Checking Channels wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
-                        clearInterval(interval);
+                        clearInterval(window.erpops_route_interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
                         if ($(wrapper).find('#shopify-overview-status').length === 0) {
                             console.log("Injecting custom Channels panel into Workspace layout...");
@@ -690,7 +695,7 @@ $(document).ready(function() {
                         }
                     }
                     if (attempts > 50) {
-                        clearInterval(interval);
+                        clearInterval(window.erpops_route_interval);
                     }
                 }, 100);
             } else if (route_lower === 'workspaces/shopify' || 
@@ -698,12 +703,12 @@ $(document).ready(function() {
                        route_lower === 'shopify') {
                 
                 var attempts = 0;
-                var interval = setInterval(function() {
+                window.erpops_route_interval = setInterval(function() {
                     attempts++;
                     var wrapper = $('.page-container:visible')[0];
                     console.log("[Alaiy OS Router] Checking Shopify wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
-                        clearInterval(interval);
+                        clearInterval(window.erpops_route_interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
                         if ($(wrapper).find('#shopify-toggle-enable').length === 0) {
                             console.log("Injecting custom Shopify details panel into Workspace layout...");
@@ -713,7 +718,7 @@ $(document).ready(function() {
                         }
                     }
                     if (attempts > 50) {
-                        clearInterval(interval);
+                        clearInterval(window.erpops_route_interval);
                     }
                 }, 100);
             }
