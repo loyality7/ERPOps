@@ -304,68 +304,44 @@ window.render_erpops_inventory = function(wrapper) {
 window.render_erpops_orders = function(wrapper) {
     if (!wrapper) return;
 
-    // Render tab structure and layout
+    // Render layout with only the Sales Orders list
     $(wrapper).find('.layout-main-section').html(`
 		<div class="erpops-inventory-container">
-			<!-- Custom Tabs Header -->
-			<div class="erpops-tabs-header">
-				<button class="erpops-tab-btn active" data-tab="orders">Orders</button>
-				<button class="erpops-tab-btn" data-tab="returns">Returns</button>
-				<button class="erpops-tab-btn" data-tab="analytics">Analytics</button>
-			</div>
-
-			<!-- Tab 1: Orders Content -->
-			<div class="erpops-tab-content active" id="tab-orders-content">
-				<div class="inventory-card">
-					<div class="inventory-card-header">
-						<div class="header-left">
-							<span class="card-title">Sales Orders</span>
-							<span class="badge badge-info" id="orders-count">4 orders</span>
-						</div>
-						<div class="header-right">
-							<div class="search-box-container">
-								<input type="text" class="form-control" id="orders-search" placeholder="Search orders...">
-								<i class="fa fa-search search-icon"></i>
-							</div>
-							<button class="btn btn-default btn-sm btn-refresh-orders"><i class="fa fa-refresh"></i></button>
-							<button class="btn btn-default btn-sm"><i class="fa fa-columns"></i> Columns</button>
-							<button class="btn btn-default btn-sm"><i class="fa fa-download"></i> Export</button>
-						</div>
+			<div class="inventory-card">
+				<div class="inventory-card-header">
+					<div class="header-left">
+						<span class="card-title">Sales Orders</span>
+						<span class="badge badge-info" id="orders-count">0 orders</span>
 					</div>
-
-					<div class="inventory-table-responsive">
-						<table class="table erpops-custom-table">
-							<thead>
-								<tr>
-									<th width="40"><input type="checkbox" id="select-all-orders"></th>
-									<th>ORDER ID</th>
-									<th>CUSTOMER</th>
-									<th>DATE</th>
-									<th>TOTAL</th>
-									<th>PAYMENT STATUS</th>
-									<th>FULFILLMENT</th>
-									<th>CHANNEL</th>
-								</tr>
-							</thead>
-							<tbody id="orders-table-body">
-								<!-- Dynamically populated -->
-							</tbody>
-						</table>
+					<div class="header-right">
+						<div class="search-box-container">
+							<input type="text" class="form-control" id="orders-search" placeholder="Search orders...">
+							<i class="fa fa-search search-icon"></i>
+						</div>
+						<button class="btn btn-default btn-sm btn-refresh-orders"><i class="fa fa-refresh"></i></button>
+						<button class="btn btn-default btn-sm"><i class="fa fa-columns"></i> Columns</button>
+						<button class="btn btn-default btn-sm"><i class="fa fa-download"></i> Export</button>
 					</div>
 				</div>
-			</div>
 
-			<!-- Tab 2: Returns Content -->
-			<div class="erpops-tab-content" id="tab-returns-content">
-				<div class="inventory-card text-center py-5">
-					<p class="text-muted" style="font-size: 14px;">No returns data available.</p>
-				</div>
-			</div>
-
-			<!-- Tab 3: Analytics Content -->
-			<div class="erpops-tab-content" id="tab-analytics-content">
-				<div class="inventory-card text-center py-5">
-					<p class="text-muted" style="font-size: 14px;">No analytics data available.</p>
+				<div class="inventory-table-responsive">
+					<table class="table erpops-custom-table">
+						<thead>
+							<tr>
+								<th width="40"><input type="checkbox" id="select-all-orders"></th>
+								<th>ORDER ID</th>
+								<th>CUSTOMER</th>
+								<th>DATE</th>
+								<th>TOTAL</th>
+								<th>PAYMENT STATUS</th>
+								<th>FULFILLMENT</th>
+								<th>CHANNEL</th>
+							</tr>
+						</thead>
+						<tbody id="orders-table-body">
+							<!-- Dynamically populated -->
+						</tbody>
+					</table>
 				</div>
 			</div>
 		</div>
@@ -423,15 +399,6 @@ window.render_erpops_orders = function(wrapper) {
         });
     };
 
-    // Tab switcher
-    $(wrapper).find('.erpops-tab-btn').on('click', function() {
-        var tab_id = $(this).data('tab');
-        $(wrapper).find('.erpops-tab-btn').removeClass('active');
-        $(this).addClass('active');
-        $(wrapper).find('.erpops-tab-content').removeClass('active');
-        $(wrapper).find('#tab-' + tab_id + '-content').addClass('active');
-    });
-
     // Search filter for orders
     $(wrapper).find('#orders-search').on('keyup input', function() {
         var query = $(this).val().toLowerCase();
@@ -481,44 +448,42 @@ window.render_erpops_channels = function(wrapper) {
 				<p class="text-muted">Configure and sync your external e-commerce sales channels.</p>
 			</div>
 			
-			<div class="row">
-				<div class="col-md-6">
-					<!-- Shopify Channel Card -->
-					<div class="inventory-card">
-						<div class="inventory-card-header">
-							<div class="header-left" style="display:flex; align-items:center; gap:8px;">
-								<i class="fa fa-shopping-bag text-primary" style="font-size: 20px;"></i>
-								<span class="card-title">Shopify Integration</span>
-							</div>
-							<div class="header-right" style="display:flex; align-items:center; gap:10px;">
-								<span style="font-size: 13px; font-weight: 500; color: #64748b;">Status:</span>
-								<label class="erpops-switch">
-									<input type="checkbox" id="shopify-toggle-enable">
-									<span class="erpops-slider round"></span>
-								</label>
-							</div>
+			<div class="channels-cards-list" style="max-width: 800px;">
+				<!-- Shopify Channel Card -->
+				<div class="inventory-card">
+					<div class="inventory-card-header">
+						<div class="header-left" style="display:flex; align-items:center; gap:8px;">
+							<i class="fa fa-shopping-bag text-primary" style="font-size: 20px;"></i>
+							<span class="card-title">Shopify Integration</span>
 						</div>
-						<div style="padding: 24px;">
-							<table class="table" style="margin-bottom: 20px; font-size: 13px;">
-								<tbody>
-									<tr>
-										<td style="border-top:none; color:#64748b; width:40%; padding: 8px 0;">Channel Name</td>
-										<td style="border-top:none; font-weight:600; padding: 8px 0;">Shopify</td>
-									</tr>
-									<tr>
-										<td style="color:#64748b; padding: 8px 0;">Domain</td>
-										<td id="shopify-chan-domain" style="font-weight:600; padding: 8px 0;">Loading...</td>
-									</tr>
-									<tr>
-										<td style="color:#64748b; padding: 8px 0;">Last Sync</td>
-										<td id="shopify-chan-sync" class="text-muted" style="padding: 8px 0;">Loading...</td>
-									</tr>
-								</tbody>
-							</table>
-							<div style="display: flex; gap: 10px; justify-content: flex-end;">
-								<button class="btn btn-default btn-sm btn-shopify-settings"><i class="fa fa-cog"></i> Configure Settings</button>
-								<button class="btn btn-primary btn-sm btn-run-sync"><i class="fa fa-refresh"></i> Sync Now</button>
-							</div>
+						<div class="header-right" style="display:flex; align-items:center; gap:10px;">
+							<span style="font-size: 13px; font-weight: 500; color: #64748b;">Status:</span>
+							<label class="erpops-switch">
+								<input type="checkbox" id="shopify-toggle-enable">
+								<span class="erpops-slider round"></span>
+							</label>
+						</div>
+					</div>
+					<div style="padding: 24px;">
+						<table class="table" style="margin-bottom: 20px; font-size: 13px;">
+							<tbody>
+								<tr>
+									<td style="border-top:none; color:#64748b; width:40%; padding: 8px 0;">Channel Name</td>
+									<td style="border-top:none; font-weight:600; padding: 8px 0;">Shopify</td>
+								</tr>
+								<tr>
+									<td style="color:#64748b; padding: 8px 0;">Domain</td>
+									<td id="shopify-chan-domain" style="font-weight:600; padding: 8px 0;">Loading...</td>
+								</tr>
+								<tr>
+									<td style="color:#64748b; padding: 8px 0;">Last Sync</td>
+									<td id="shopify-chan-sync" class="text-muted" style="padding: 8px 0;">Loading...</td>
+								</tr>
+							</tbody>
+						</table>
+						<div style="display: flex; gap: 10px; justify-content: flex-end;">
+							<button class="btn btn-default btn-sm btn-shopify-settings"><i class="fa fa-cog"></i> Configure Settings</button>
+							<button class="btn btn-primary btn-sm btn-run-sync"><i class="fa fa-refresh"></i> Sync Now</button>
 						</div>
 					</div>
 				</div>
@@ -596,34 +561,32 @@ window.render_erpops_channels_overview = function(wrapper) {
 				<p class="text-muted">Manage your external e-commerce integrations and sales channels.</p>
 			</div>
 			
-			<div class="row">
-				<div class="col-md-6">
-					<!-- Shopify Integration Row -->
-					<div class="inventory-card" style="cursor: pointer; margin-bottom: 20px;" onclick="frappe.set_route('Form', 'Shopify Setting')">
-						<div style="padding: 24px; display: flex; justify-content: space-between; align-items: center;">
-							<div style="display: flex; align-items: center; gap: 15px;">
-								<i class="fa fa-shopping-bag text-primary" style="font-size: 24px;"></i>
-								<div>
-									<h4 style="margin: 0 0 4px 0; font-weight: 600;">Shopify</h4>
-									<span id="shopify-overview-status" class="text-muted" style="font-size: 13px;">Checking status...</span>
-								</div>
+			<div class="channels-cards-list" style="max-width: 800px;">
+				<!-- Shopify Integration Row -->
+				<div class="inventory-card" style="cursor: pointer; margin-bottom: 20px;" onclick="frappe.set_route('Form', 'Shopify Setting')">
+					<div style="padding: 24px; display: flex; justify-content: space-between; align-items: center;">
+						<div style="display: flex; align-items: center; gap: 15px;">
+							<i class="fa fa-shopping-bag text-primary" style="font-size: 24px;"></i>
+							<div>
+								<h4 style="margin: 0 0 4px 0; font-weight: 600;">Shopify</h4>
+								<span id="shopify-overview-status" class="text-muted" style="font-size: 13px;">Checking status...</span>
 							</div>
-							<i class="fa fa-chevron-right text-muted"></i>
 						</div>
+						<i class="fa fa-chevron-right text-muted"></i>
 					</div>
-					
-					<!-- Amazon Integration Row (Coming Soon) -->
-					<div class="inventory-card" style="margin-bottom: 20px; opacity: 0.6;">
-						<div style="padding: 24px; display: flex; justify-content: space-between; align-items: center;">
-							<div style="display: flex; align-items: center; gap: 15px;">
-								<i class="fa fa-amazon text-warning" style="font-size: 24px;"></i>
-								<div>
-									<h4 style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Amazon</h4>
-									<span class="text-muted" style="font-size: 13px;">Coming soon</span>
-								</div>
+				</div>
+				
+				<!-- Amazon Integration Row (Coming Soon) -->
+				<div class="inventory-card" style="margin-bottom: 20px; opacity: 0.6;">
+					<div style="padding: 24px; display: flex; justify-content: space-between; align-items: center;">
+						<div style="display: flex; align-items: center; gap: 15px;">
+							<i class="fa fa-amazon text-warning" style="font-size: 24px;"></i>
+							<div>
+								<h4 style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Amazon</h4>
+								<span class="text-muted" style="font-size: 13px;">Coming soon</span>
 							</div>
-							<i class="fa fa-lock text-muted"></i>
 						</div>
+						<i class="fa fa-lock text-muted"></i>
 					</div>
 				</div>
 			</div>
