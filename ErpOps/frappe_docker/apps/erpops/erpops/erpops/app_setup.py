@@ -253,6 +253,7 @@ def setup_shopify_integration():
     doc.enable_shopify = 1
     doc.shopify_url = shop
     doc.password = token
+    doc.shared_secret = client_secret
 
     # Mock frappe.request to prevent "RuntimeError: object is not bound" during CLI migrate
     class MockRequest:
