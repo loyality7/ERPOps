@@ -473,8 +473,9 @@ def shopify_get_products(limit=50):
 
 @frappe.whitelist()
 def run_manual_sync():
-    """Manually trigger Shopify orders sync."""
-    from erpops.erpops.scheduler.shopify_order_sync import sync_shopify_orders
+    """Manually trigger Shopify orders and products sync."""
+    from erpops.erpops.scheduler.shopify_order_sync import sync_shopify_orders, sync_shopify_products
+    sync_shopify_products()
     sync_shopify_orders()
     return {"status": "success"}
 

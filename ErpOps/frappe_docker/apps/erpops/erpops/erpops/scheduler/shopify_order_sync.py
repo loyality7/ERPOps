@@ -4,6 +4,9 @@ import frappe
 def sync_shopify_orders():
     """Every 5 min: poll Shopify for new orders and create Sales Orders in ERPNext."""
     try:
+        # Also sync products to ensure mappings and catalog are fresh
+        sync_shopify_products()
+
         from erpops.erpops.shopify.shopify_client import ShopifyClient
         shopify = ShopifyClient()
 
@@ -31,6 +34,58 @@ def sync_shopify_orders():
 
     except Exception as e:
         frappe.log_error(f"Shopify order sync failed: {e}", "Shopify Order Sync")
+
+
+def sync_shopify_products():
+    """Poll Shopify for products and create/map them in ERPNext."""
+    try:
+        from erpops.erpops.shopify.shopify_client import ShopifyClient
+        shopify = ShopifyClient()
+
+        # Fetch up to 100 products from Shopify
+        products = shopify.get_products(limit=100)
+
+        for p in products:
+            title = p.get("title", "")
+            vendor = p.get("vendor", "")
+
+            for v in p.get("variants", {}).get("nodes", []):
+                variant_id = v.get("id", "")
+                sku = v.get("sku")
+                
+                # If SKU is empty, generate a fallback SKU based on Variant ID
+                clean_variant_id = variant_id.split("/")[-1] if "/" in variant_id else variant_id
+                if not sku:
+                    sku = f"SPY-{clean_variant_id}"
+
+                variant_title = v.get("title", "")
+                item_name = title
+                if variant_title and variant_title != "Default Title":
+                    item_name = f"{title} - {variant_title}"
+
+                # 1. Ensure Item exists in ERPNext
+                if not frappe.db.exists("Item", sku):
+                    item = frappe.new_doc("Item")
+                    item.item_code = sku
+                    item.item_name = item_name
+                    item.item_group = "Shopify Items"
+                    item.brand = vendor or "Generic"
+                    item.is_stock_item = 1
+                    item.stock_uom = "Nos"
+                    item.flags.ignore_mandatory = True
+                    item.insert(ignore_permissions=True)
+
+                # 2. Ensure Ecommerce Item mapping exists
+                if clean_variant_id and not frappe.db.exists("Ecommerce Item", {"erpnext_item_code": sku, "integration": "Shopify"}):
+                    eco = frappe.new_doc("Ecommerce Item")
+                    eco.erpnext_item_code = sku
+                    eco.integration_item_code = clean_variant_id
+                    eco.integration = "Shopify"
+                    eco.insert(ignore_permissions=True)
+
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(f"Shopify product sync failed: {e}", "Shopify Product Sync")
 
 
 def _create_sales_order_from_shopify(order):
@@ -66,6 +121,22 @@ def _create_sales_order_from_shopify(order):
             item.stock_uom = "Nos"
             item.flags.ignore_mandatory = True
             item.insert(ignore_permissions=True)
+
+        # Build Ecommerce Item mapping on the fly during order import
+        variant_id = line.get("variant", {}).get("id") if line.get("variant") else ""
+        product_id = line.get("product", {}).get("id") if line.get("product") else ""
+        raw_shopify_id = variant_id or product_id or ""
+        clean_shopify_id = raw_shopify_id.split("/")[-1] if "/" in raw_shopify_id else raw_shopify_id
+
+        if clean_shopify_id and not frappe.db.exists("Ecommerce Item", {"erpnext_item_code": item_code, "integration": "Shopify"}):
+            try:
+                eco = frappe.new_doc("Ecommerce Item")
+                eco.erpnext_item_code = item_code
+                eco.integration_item_code = clean_shopify_id
+                eco.integration = "Shopify"
+                eco.insert(ignore_permissions=True)
+            except Exception as ex:
+                frappe.log_error(f"Failed to auto-create Ecommerce Item mapping during order sync: {ex}", "Shopify Sync")
 
         so.append("items", {
             "item_code": item_code,
