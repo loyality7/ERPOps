@@ -201,7 +201,8 @@ def sync_shopify_products():
 
 
 def _create_sales_order_from_shopify(order):
-    customer_name = order.get("customer", {}).get("displayName", "Shopify Customer")
+    customer_data = order.get("customer") or {}
+    customer_name = customer_data.get("displayName") or "Shopify Customer"
     customer = frappe.db.get_value("Customer", {"customer_name": customer_name})
     if not customer:
         c = frappe.new_doc("Customer")
