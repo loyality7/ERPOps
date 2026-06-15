@@ -145,6 +145,12 @@ def sync_shopify_products():
                         item_name = f"{title} - {variant_title}"
 
                     if not frappe.db.exists("Item", sku):
+                        # Delete stale/conflicting Ecommerce Item mappings to prevent after_insert hook crashes
+                        frappe.db.delete("Ecommerce Item", {"erpnext_item_code": sku})
+                        if clean_variant_id:
+                            frappe.db.delete("Ecommerce Item", {"integration_item_code": clean_variant_id, "integration": "Shopify"})
+                        frappe.db.commit()
+
                         item = frappe.new_doc("Item")
                         item.item_code = sku
                         item.item_name = item_name
@@ -253,6 +259,12 @@ def _create_sales_order_from_shopify(order):
             item_code = line.get("title", "UNKNOWN")
 
         if not frappe.db.exists("Item", item_code):
+            # Delete stale/conflicting Ecommerce Item mappings to prevent after_insert hook crashes
+            frappe.db.delete("Ecommerce Item", {"erpnext_item_code": item_code})
+            if clean_shopify_id:
+                frappe.db.delete("Ecommerce Item", {"integration_item_code": clean_shopify_id, "integration": "Shopify"})
+            frappe.db.commit()
+
             item = frappe.new_doc("Item")
             item.item_code = item_code
             item.item_name = line.get("title", item_code)
