@@ -630,7 +630,7 @@ $(document).ready(function() {
                 var attempts = 0;
                 var interval = setInterval(function() {
                     attempts++;
-                    var wrapper = frappe.container && frappe.container.page && frappe.container.page.wrapper;
+                    var wrapper = $('.page-container:visible')[0];
                     console.log("[Alaiy OS Router] Checking Inventory wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(interval);
@@ -654,7 +654,7 @@ $(document).ready(function() {
                 var attempts = 0;
                 var interval = setInterval(function() {
                     attempts++;
-                    var wrapper = frappe.container && frappe.container.page && frappe.container.page.wrapper;
+                    var wrapper = $('.page-container:visible')[0];
                     console.log("[Alaiy OS Router] Checking Orders wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(interval);
@@ -677,7 +677,7 @@ $(document).ready(function() {
                 var attempts = 0;
                 var interval = setInterval(function() {
                     attempts++;
-                    var wrapper = frappe.container && frappe.container.page && frappe.container.page.wrapper;
+                    var wrapper = $('.page-container:visible')[0];
                     console.log("[Alaiy OS Router] Checking Channels wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(interval);
@@ -700,7 +700,7 @@ $(document).ready(function() {
                 var attempts = 0;
                 var interval = setInterval(function() {
                     attempts++;
-                    var wrapper = frappe.container && frappe.container.page && frappe.container.page.wrapper;
+                    var wrapper = $('.page-container:visible')[0];
                     console.log("[Alaiy OS Router] Checking Shopify wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(interval);
