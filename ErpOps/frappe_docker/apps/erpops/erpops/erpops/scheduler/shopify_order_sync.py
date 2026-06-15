@@ -242,6 +242,8 @@ def _create_sales_order_from_shopify(order):
     so.delivery_date = frappe.utils.add_days(frappe.utils.today(), 3)
     so.custom_shopify_order_id = order.get("id", "")
     so.custom_channel = "shopify"
+    if frappe.get_meta("Sales Order").has_field("custom_payment_status"):
+        so.custom_payment_status = "Paid" if (order.get("displayFinancialStatus") or "").upper() == "PAID" else "Unpaid"
 
     for line in order.get("lineItems", {}).get("nodes", []):
         variant_id = line.get("variant", {}).get("id") if line.get("variant") else ""
