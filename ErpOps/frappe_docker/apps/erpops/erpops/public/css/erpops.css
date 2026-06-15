@@ -2,7 +2,6 @@
 
 .erpops-inventory-container {
 	padding: 15px 20px;
-	background-color: #f8fafc;
 	min-height: 100vh;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -471,4 +470,31 @@ input:checked + .erpops-slider:before {
 /* Show only when active */
 .erpops-tab-content.active {
 	display: block;
+}
+
+/* Sidebar Theme Custom Reset */
+.layout-side-section,
+.desk-sidebar,
+.sidebar-items,
+.sidebar-section,
+.sidebar-item-container,
+.nested-container {
+	background-color: transparent !important;
+	background: transparent !important;
+}
+
+.desk-sidebar .sidebar-link,
+.desk-sidebar .sidebar-link span,
+.desk-sidebar .sidebar-link i {
+	color: #475569 !important;
+}
+
+.desk-sidebar .sidebar-link.active,
+.desk-sidebar .sidebar-link:hover {
+	background-color: #f1f5f9 !important;
+	color: #1e293b !important;
+}
+
+.desk-sidebar .sidebar-section-header {
+	color: #94a3b8 !important;
 }

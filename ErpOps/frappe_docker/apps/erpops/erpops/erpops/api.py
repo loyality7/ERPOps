@@ -550,6 +550,7 @@ def get_product_catalogue():
                 i.brand,
                 i.has_variants,
                 i.variant_of,
+                i.item_group,
                 SUM(COALESCE(b.actual_qty, 0)) AS actual_qty,
                 SUM(COALESCE(b.actual_qty - b.reserved_qty, 0)) AS available_qty
             FROM `tabItem` i
@@ -591,6 +592,15 @@ def get_product_catalogue():
                 
             shopify_id = mapping_map.get(i.item_code)
             
+            # Robust fallback for imported or numeric Shopify codes
+            is_shopify_group = i.item_group == "Shopify Items"
+            is_shopify_numeric = i.item_code.isdigit() and len(i.item_code) > 10
+            
+            if not shopify_id and (is_shopify_group or is_shopify_numeric):
+                shopify_id = i.item_code
+                
+            is_synced = "Synced" if (shopify_id or is_shopify_group or is_shopify_numeric) else "Not synced"
+            
             result.append({
                 "item_code": i.item_code,
                 "item_name": i.item_name,
@@ -599,7 +609,7 @@ def get_product_catalogue():
                 "variants": f"{var_count} variant" if var_count == 1 else f"{var_count} variants",
                 "available": int(i.available_qty),
                 "on_hand": int(i.actual_qty),
-                "shopify_status": "Synced" if shopify_id else "Not synced",
+                "shopify_status": is_synced,
                 "shopify_id": shopify_id
             })
         return result
