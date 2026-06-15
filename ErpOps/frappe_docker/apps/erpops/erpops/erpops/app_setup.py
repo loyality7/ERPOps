@@ -382,7 +382,7 @@ def setup_sidebar_workspaces():
     chan_ws.public = 1
     chan_ws.module = "ErpOps"
     chan_ws.parent_page = ""
-    chan_ws.icon = "link"
+    chan_ws.icon = "integrations"
     chan_ws.is_hidden = 0
     chan_ws.sequence_id = 4
     chan_ws.links = []
