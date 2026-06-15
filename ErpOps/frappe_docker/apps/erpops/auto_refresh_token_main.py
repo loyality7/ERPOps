@@ -5,7 +5,7 @@ import time
 import frappe
 
 # Initialize Frappe framework context
-frappe.init(site="erp-test.gainandshine.com")
+frappe.init(site="erp-test.gainandshine.com", sites_path="sites")
 frappe.connect()
 
 # Read Shopify credentials securely from site_config.json
