@@ -51,11 +51,25 @@ window.render_erpops_inventory = function(wrapper) {
 						</tbody>
 					</table>
 				</div>
+
+				<!-- Pagination Footer -->
+				<div class="inventory-card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-top: 1px solid #f1f5f9; background: #fafbfd;">
+					<div class="text-muted" style="font-size: 13px;">
+						Showing <span id="pagination-start">0</span> to <span id="pagination-end">0</span> of <span id="pagination-total">0</span> products
+					</div>
+					<div style="display: flex; gap: 8px;">
+						<button class="btn btn-default btn-xs btn-prev-page" style="padding: 5px 10px; font-weight: 500;"><i class="fa fa-chevron-left"></i> Previous</button>
+						<button class="btn btn-default btn-xs btn-next-page" style="padding: 5px 10px; font-weight: 500;">Next <i class="fa fa-chevron-right"></i></button>
+					</div>
+				</div>
 			</div>
 		</div>
     `);
 
     var all_products = [];
+    var displayed_products = [];
+    var current_page = 1;
+    var page_size = 50;
 
     // Fetch data from API
     var load_data = function() {
@@ -74,6 +88,7 @@ window.render_erpops_inventory = function(wrapper) {
             callback: function(r) {
                 if (r.message) {
                     all_products = r.message;
+                    current_page = 1;
                     render_table(all_products);
                 } else {
                     tbody.html('<tr><td colspan="8" class="text-center py-4">No products found.</td></tr>');
@@ -85,17 +100,32 @@ window.render_erpops_inventory = function(wrapper) {
 
     // Render table rows
     var render_table = function(products) {
+        displayed_products = products;
+        var total_products = products.length;
+        var total_pages = Math.ceil(total_products / page_size) || 1;
+        
+        if (current_page > total_pages) current_page = total_pages;
+        if (current_page < 1) current_page = 1;
+
+        var start_index = (current_page - 1) * page_size;
+        var end_index = Math.min(start_index + page_size, total_products);
+
         var tbody = $(wrapper).find('#inventory-table-body');
         tbody.empty();
 
-        $(wrapper).find('#product-count').text(`${products.length} products`);
+        $(wrapper).find('#product-count').text(`${total_products} products`);
+        $(wrapper).find('#pagination-total').text(total_products);
+        $(wrapper).find('#pagination-start').text(total_products > 0 ? start_index + 1 : 0);
+        $(wrapper).find('#pagination-end').text(end_index);
 
-        if (products.length === 0) {
+        if (total_products === 0) {
             tbody.html('<tr><td colspan="8" class="text-center py-4">No matching products found.</td></tr>');
             return;
         }
 
-        products.forEach(function(p) {
+        var page_products = products.slice(start_index, end_index);
+
+        page_products.forEach(function(p) {
             var status_class = p.shopify_status === 'Synced' ? 'pill-synced' : 'pill-not-synced';
             var status_icon = p.shopify_status === 'Synced' ? '<i class="fa fa-check-circle text-success mr-1"></i>' : '';
             
@@ -132,6 +162,10 @@ window.render_erpops_inventory = function(wrapper) {
             `);
             tbody.append(row);
         });
+
+        // Disable/enable pagination buttons
+        $(wrapper).find('.btn-prev-page').prop('disabled', current_page === 1);
+        $(wrapper).find('.btn-next-page').prop('disabled', current_page === total_pages);
     };
 
     // Event Handlers
@@ -140,6 +174,7 @@ window.render_erpops_inventory = function(wrapper) {
         var filtered = all_products.filter(function(p) {
             return p.item_name.toLowerCase().indexOf(query) !== -1 || p.item_code.toLowerCase().indexOf(query) !== -1 || p.brand.toLowerCase().indexOf(query) !== -1;
         });
+        current_page = 1;
         render_table(filtered);
     });
 
@@ -149,6 +184,21 @@ window.render_erpops_inventory = function(wrapper) {
 
     $(wrapper).find('.btn-refresh-catalogue').on('click', function() {
         load_data();
+    });
+
+    $(wrapper).find('.btn-prev-page').on('click', function() {
+        if (current_page > 1) {
+            current_page--;
+            render_table(displayed_products);
+        }
+    });
+
+    $(wrapper).find('.btn-next-page').on('click', function() {
+        var total_pages = Math.ceil(displayed_products.length / page_size) || 1;
+        if (current_page < total_pages) {
+            current_page++;
+            render_table(displayed_products);
+        }
     });
 
     // Initial Load
@@ -440,6 +490,182 @@ window.render_erpops_orders = function(wrapper) {
     render_returns();
 };
 
+window.render_erpops_returns = function(wrapper) {
+    if (!wrapper) return;
+
+    $(wrapper).find('.layout-main-section').html(`
+		<div class="erpops-inventory-container">
+			<div class="inventory-card">
+				<div class="inventory-card-header">
+					<div class="header-left">
+						<span class="card-title">Order Returns</span>
+						<span class="badge badge-info" id="returns-count">2 returns</span>
+					</div>
+					<div class="header-right">
+						<button class="btn btn-default btn-sm btn-refresh-returns"><i class="fa fa-refresh"></i></button>
+						<button class="btn btn-default btn-sm"><i class="fa fa-download"></i> Export</button>
+					</div>
+				</div>
+
+				<div class="inventory-table-responsive">
+					<table class="table erpops-custom-table">
+						<thead>
+							<tr>
+								<th>RETURN ID</th>
+								<th>ORDER ID</th>
+								<th>PRODUCT</th>
+								<th>REFUND AMOUNT</th>
+								<th>REASON</th>
+								<th>STATUS</th>
+							</tr>
+						</thead>
+						<tbody id="returns-table-body">
+							<!-- Dynamically populated -->
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+    `);
+
+    var returns = [
+        { id: "RET-1001", order_id: "ORD-1004", product: "Alaiy Premium Hoodie", amount: "₹120.00", reason: "Size too large", status: "Approved" },
+        { id: "RET-1002", order_id: "ORD-0995", product: "Alaiy Tee Cream", amount: "₹45.00", reason: "Fabric defect", status: "Pending" }
+    ];
+
+    var render_returns = function() {
+        var tbody = $(wrapper).find('#returns-table-body');
+        tbody.empty();
+        $(wrapper).find('#returns-count').text(`${returns.length} returns`);
+
+        returns.forEach(function(r) {
+            var status_class = r.status === 'Approved' ? 'pill-paid' : 'pill-processing';
+            tbody.append(`
+				<tr>
+					<td><b>${r.id}</b></td>
+					<td><a href="#Form/Sales Order/${r.order_id}"><b>${r.order_id}</b></a></td>
+					<td>${r.product}</td>
+					<td><b>${r.amount}</b></td>
+					<td class="text-muted">${r.reason}</td>
+					<td><span class="status-pill ${status_class}">${r.status}</span></td>
+				</tr>
+            `);
+        });
+    };
+
+    $(wrapper).find('.btn-refresh-returns').on('click', render_returns);
+    render_returns();
+};
+
+window.render_erpops_analytics = function(wrapper) {
+    if (!wrapper) return;
+
+    $(wrapper).find('.layout-main-section').html(`
+		<div class="erpops-inventory-container">
+			<!-- KPI Cards -->
+			<div class="analytics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px;">
+				<div class="analytics-card" style="background: #ffffff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+					<div class="card-metric-label" style="font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">Sales Today</div>
+					<div class="card-metric-value" style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">₹1,245.00</div>
+					<div class="card-metric-trend trend-up" style="font-size: 12px; color: #10b981; font-weight: 600;"><i class="fa fa-arrow-up"></i> +12.4% vs yesterday</div>
+				</div>
+				<div class="analytics-card" style="background: #ffffff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+					<div class="card-metric-label" style="font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">Total Orders</div>
+					<div class="card-metric-value" style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">14</div>
+					<div class="card-metric-trend trend-up" style="font-size: 12px; color: #10b981; font-weight: 600;"><i class="fa fa-arrow-up"></i> +8.3% vs last week</div>
+				</div>
+				<div class="analytics-card" style="background: #ffffff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+					<div class="card-metric-label" style="font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">Return Rate</div>
+					<div class="card-metric-value" style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">2.1%</div>
+					<div class="card-metric-trend trend-down" style="font-size: 12px; color: #f59e0b; font-weight: 600;"><i class="fa fa-arrow-down"></i> -0.4% this month</div>
+				</div>
+				<div class="analytics-card" style="background: #ffffff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+					<div class="card-metric-label" style="font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">Avg Order Value</div>
+					<div class="card-metric-value" style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">₹88.92</div>
+					<div class="card-metric-trend trend-up" style="font-size: 12px; color: #10b981; font-weight: 600;"><i class="fa fa-arrow-up"></i> +4.1% overall</div>
+				</div>
+			</div>
+
+			<!-- Visual analytics graphs & progress bars -->
+			<div class="row">
+				<div class="col-md-6">
+					<div class="inventory-card">
+						<div class="inventory-card-header">
+							<span class="card-title">Sales By Channel</span>
+						</div>
+						<div style="padding: 24px;">
+							<div class="progress-list-item" style="margin-bottom: 16px;">
+								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+									<span>Shopify Store</span>
+									<span><b>₹845.00 (68%)</b></span>
+								</div>
+								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+									<div class="progress-bar-fill" style="width: 68%; background-color: #3b82f6; height: 100%; border-radius: 4px;"></div>
+								</div>
+							</div>
+							<div class="progress-list-item" style="margin-bottom: 16px;">
+								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+									<span>Wholesale / B2B</span>
+									<span><b>₹300.00 (24%)</b></span>
+								</div>
+								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+									<div class="progress-bar-fill" style="width: 24%; background-color: #10b981; height: 100%; border-radius: 4px;"></div>
+								</div>
+							</div>
+							<div class="progress-list-item">
+								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+									<span>Retail / POS</span>
+									<span><b>₹100.00 (8%)</b></span>
+								</div>
+								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+									<div class="progress-bar-fill" style="width: 8%; background-color: #f59e0b; height: 100%; border-radius: 4px;"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="col-md-6">
+					<div class="inventory-card">
+						<div class="inventory-card-header">
+							<span class="card-title">Common Return Reasons</span>
+						</div>
+						<div style="padding: 24px;">
+							<div class="progress-list-item" style="margin-bottom: 16px;">
+								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+									<span>Size Too Large / Small</span>
+									<span><b>62%</b></span>
+								</div>
+								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+									<div class="progress-bar-fill" style="width: 62%; background-color: #ec4899; height: 100%; border-radius: 4px;"></div>
+								</div>
+							</div>
+							<div class="progress-list-item" style="margin-bottom: 16px;">
+								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+									<span>Incorrect Item Shipped</span>
+									<span><b>23%</b></span>
+								</div>
+								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+									<div class="progress-bar-fill" style="width: 23%; background-color: #8b5cf6; height: 100%; border-radius: 4px;"></div>
+								</div>
+							</div>
+							<div class="progress-list-item">
+								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
+									<span>Fabric Defect / Damaged</span>
+									<span><b>15%</b></span>
+								</div>
+								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+									<div class="progress-bar-fill" style="width: 15%; background-color: #64748b; height: 100%; border-radius: 4px;"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+    `);
+};
+
 window.render_erpops_channels = function(wrapper) {
     if (!wrapper) return;
 
@@ -714,6 +940,52 @@ $(document).ready(function() {
                             console.log("Injecting custom Shopify details panel into Workspace layout...");
                             frappe.require("/assets/erpops/css/inventory_page.css", function() {
                                 window.render_erpops_channels(wrapper);
+                            });
+                        }
+                    }
+                    if (attempts > 50) {
+                        clearInterval(window.erpops_route_interval);
+                    }
+                }, 100);
+            } else if (route_lower === 'workspaces/returns' || 
+                       route_lower === 'workspace/returns' || 
+                       route_lower === 'returns') {
+                
+                var attempts = 0;
+                window.erpops_route_interval = setInterval(function() {
+                    attempts++;
+                    var wrapper = $('.page-container:visible')[0];
+                    console.log("[Alaiy OS Router] Checking Returns wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
+                    if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
+                        clearInterval(window.erpops_route_interval);
+                        console.log("[Alaiy OS Router] Found main layout section!");
+                        if ($(wrapper).find('#returns-table-body').length === 0) {
+                            console.log("Injecting custom Returns panel into Workspace layout...");
+                            frappe.require("/assets/erpops/css/inventory_page.css", function() {
+                                window.render_erpops_returns(wrapper);
+                            });
+                        }
+                    }
+                    if (attempts > 50) {
+                        clearInterval(window.erpops_route_interval);
+                    }
+                }, 100);
+            } else if (route_lower === 'workspaces/analytics' || 
+                       route_lower === 'workspace/analytics' || 
+                       route_lower === 'analytics') {
+                
+                var attempts = 0;
+                window.erpops_route_interval = setInterval(function() {
+                    attempts++;
+                    var wrapper = $('.page-container:visible')[0];
+                    console.log("[Alaiy OS Router] Checking Analytics wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
+                    if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
+                        clearInterval(window.erpops_route_interval);
+                        console.log("[Alaiy OS Router] Found main layout section!");
+                        if ($(wrapper).find('.analytics-grid').length === 0) {
+                            console.log("Injecting custom Analytics panel into Workspace layout...");
+                            frappe.require("/assets/erpops/css/inventory_page.css", function() {
+                                window.render_erpops_analytics(wrapper);
                             });
                         }
                     }

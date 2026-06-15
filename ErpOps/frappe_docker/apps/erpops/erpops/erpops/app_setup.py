@@ -311,6 +311,52 @@ def setup_sidebar_workspaces():
     ])
     ord_ws.save(ignore_permissions=True)
     
+    # 2b. Setup Returns child Workspace under Orders
+    if frappe.db.exists("Workspace", "Returns"):
+        ret_ws = frappe.get_doc("Workspace", "Returns")
+    else:
+        ret_ws = frappe.new_doc("Workspace")
+        ret_ws.name = "Returns"
+        ret_ws.label = "Returns"
+        ret_ws.title = "Returns"
+        ret_ws.icon = "reply"
+        ret_ws.public = 1
+        ret_ws.module = "ErpOps"
+        
+    ret_ws.parent_page = "Orders"
+    ret_ws.is_hidden = 0
+    ret_ws.sequence_id = 1
+    ret_ws.links = []
+    ret_ws.shortcuts = []
+    ret_ws.content = json.dumps([
+        {"id": "ret_h1", "type": "header", "data": {"text": "<span class=\"h3\"><b>Returns</b></span>", "col": 12}},
+        {"id": "ret_sub", "type": "header", "data": {"text": "<span class=\"text-muted\">Manage and view order returns and refunds.</span>", "col": 12}}
+    ])
+    ret_ws.save(ignore_permissions=True)
+
+    # 2c. Setup Analytics child Workspace under Orders
+    if frappe.db.exists("Workspace", "Analytics"):
+        ana_ws = frappe.get_doc("Workspace", "Analytics")
+    else:
+        ana_ws = frappe.new_doc("Workspace")
+        ana_ws.name = "Analytics"
+        ana_ws.label = "Analytics"
+        ana_ws.title = "Analytics"
+        ana_ws.icon = "project"
+        ana_ws.public = 1
+        ana_ws.module = "ErpOps"
+        
+    ana_ws.parent_page = "Orders"
+    ana_ws.is_hidden = 0
+    ana_ws.sequence_id = 2
+    ana_ws.links = []
+    ana_ws.shortcuts = []
+    ana_ws.content = json.dumps([
+        {"id": "ana_h1", "type": "header", "data": {"text": "<span class=\"h3\"><b>Analytics</b></span>", "col": 12}},
+        {"id": "ana_sub", "type": "header", "data": {"text": "<span class=\"text-muted\">Real-time sales velocity and channel performance insights.</span>", "col": 12}}
+    ])
+    ana_ws.save(ignore_permissions=True)
+    
     # 3. Setup Channels Workspace
     if frappe.db.exists("Workspace", "Channels"):
         chan_ws = frappe.get_doc("Workspace", "Channels")
@@ -319,10 +365,11 @@ def setup_sidebar_workspaces():
         chan_ws.name = "Channels"
         chan_ws.label = "Channels"
         chan_ws.title = "Channels"
-        chan_ws.icon = "open-source"
+        chan_ws.icon = "link"
         chan_ws.public = 1
         chan_ws.module = "ErpOps"
         
+    chan_ws.icon = "link"
     chan_ws.is_hidden = 0
     chan_ws.sequence_id = 4
     chan_ws.links = []
@@ -353,10 +400,11 @@ def setup_sidebar_workspaces():
         shop_ws.name = "Shopify"
         shop_ws.label = "Shopify"
         shop_ws.title = "Shopify"
-        shop_ws.icon = "shopping-bag"
+        shop_ws.icon = "sell"
         shop_ws.public = 1
         shop_ws.module = "ErpOps"
         
+    shop_ws.icon = "sell"
     shop_ws.parent_page = "Channels"
     shop_ws.is_hidden = 0
     shop_ws.sequence_id = 1
