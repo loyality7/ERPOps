@@ -1,11 +1,17 @@
+import os
 import urllib.request
 import urllib.parse
 import json
 import time
 import frappe
 
+# Dynamically resolve site name and sites folder path relative to script location
+script_dir = os.path.dirname(os.path.abspath(__file__))
+site_name = os.path.basename(script_dir)
+sites_dir = os.path.dirname(script_dir)
+
 # Initialize Frappe framework context
-frappe.init(site="erp-test.gainandshine.com", sites_path="sites")
+frappe.init(site=site_name, sites_path=sites_dir)
 frappe.connect()
 
 # Read Shopify credentials securely from site_config.json
