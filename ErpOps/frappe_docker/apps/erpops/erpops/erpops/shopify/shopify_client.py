@@ -339,7 +339,7 @@ class ShopifyClient:
             raise Exception(f"Return refund errors: {errors}")
         return rr.get("refund", {})
 
-    def get_products(self, limit=250):
+    def get_products(self, limit=50):
         """Return all products by paginating through pages of size limit."""
         all_products = []
         has_next_page = True
@@ -363,17 +363,25 @@ class ShopifyClient:
         }
         """
         while has_next_page:
-            data = self.query(gql, {"limit": limit, "after": after_cursor})
-            products_data = data.get("products", {})
-            nodes = products_data.get("nodes", [])
-            all_products.extend(nodes)
+            try:
+                vars = {"limit": limit}
+                if after_cursor:
+                    vars["after"] = after_cursor
+                
+                data = self.query(gql, vars)
+                products_data = data.get("products", {})
+                nodes = products_data.get("nodes", [])
+                all_products.extend(nodes)
 
-            page_info = products_data.get("pageInfo", {})
-            has_next_page = page_info.get("hasNextPage", False)
-            after_cursor = page_info.get("endCursor", None)
-            
-            # Prevent infinite loop in case of API issues
-            if not nodes or not after_cursor:
+                page_info = products_data.get("pageInfo", {})
+                has_next_page = page_info.get("hasNextPage", False)
+                after_cursor = page_info.get("endCursor", None)
+                
+                # Prevent infinite loop in case of API issues
+                if not nodes or not after_cursor:
+                    break
+            except Exception as e:
+                frappe.log_error(title="Shopify Product Sync Page Fetch", message=f"Failed fetching products page. Current cursor: {after_cursor}. Error: {e}")
                 break
 
         return all_products

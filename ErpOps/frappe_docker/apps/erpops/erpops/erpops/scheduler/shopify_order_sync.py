@@ -125,7 +125,7 @@ def sync_shopify_products():
     try:
         from erpops.erpops.shopify.shopify_client import ShopifyClient
         shopify = ShopifyClient()
-        products = shopify.get_products(limit=100)
+        products = shopify.get_products()
 
         for p in products:
             title = p.get("title", "")
