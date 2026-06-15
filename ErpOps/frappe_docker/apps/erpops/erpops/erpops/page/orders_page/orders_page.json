@@ -1,0 +1,8 @@
+{
+ "doctype": "Page",
+ "page_name": "orders_page",
+ "name": "orders_page",
+ "title": "Orders",
+ "module": "ErpOps",
+ "standard": "Yes"
+}
