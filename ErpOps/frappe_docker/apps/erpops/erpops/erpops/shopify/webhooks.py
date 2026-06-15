@@ -11,35 +11,43 @@ import frappe
 
 
 def get_customer_group():
-    # Check Shopify Setting
-    group = frappe.db.get_single_value("Shopify Setting", "customer_group")
-    if group and frappe.db.exists("Customer Group", group):
+    # Check Shopify Setting safely
+    group = None
+    if frappe.get_meta("Shopify Setting").has_field("customer_group"):
+        group = frappe.db.get_single_value("Shopify Setting", "customer_group")
+        
+    if group and frappe.db.exists("Customer Group", {"name": group, "is_group": 0}):
         return group
     # Check Selling Settings default
     group = frappe.db.get_single_value("Selling Settings", "customer_group")
-    if group and frappe.db.exists("Customer Group", group):
+    if group and frappe.db.exists("Customer Group", {"name": group, "is_group": 0}):
         return group
-    # Fallback to standard non-group or first group
+    # Fallback to standard non-group Customer Group
     fallback = frappe.db.get_value("Customer Group", {"is_group": 0}, "name")
-    if not fallback:
-        fallback = frappe.db.get_value("Customer Group", {}, "name") or "All Customer Groups"
-    return fallback
+    if fallback:
+        return fallback
+    # Final fallback to first available Customer Group
+    return frappe.db.get_value("Customer Group", {}, "name")
 
 
 def get_item_group():
-    # Check Shopify Setting
-    group = frappe.db.get_single_value("Shopify Setting", "item_group")
-    if group and frappe.db.exists("Item Group", group):
+    # Check Shopify Setting safely
+    group = None
+    if frappe.get_meta("Shopify Setting").has_field("item_group"):
+        group = frappe.db.get_single_value("Shopify Setting", "item_group")
+        
+    if group and frappe.db.exists("Item Group", {"name": group, "is_group": 0}):
         return group
     # Check Stock Settings default
     group = frappe.db.get_single_value("Stock Settings", "default_item_group")
-    if group and frappe.db.exists("Item Group", group):
+    if group and frappe.db.exists("Item Group", {"name": group, "is_group": 0}):
         return group
-    # Fallback to standard non-group or first group
+    # Fallback to standard non-group Item Group
     fallback = frappe.db.get_value("Item Group", {"is_group": 0}, "name")
-    if not fallback:
-        fallback = frappe.db.get_value("Item Group", {}, "name") or "All Item Groups"
-    return fallback
+    if fallback:
+        return fallback
+    # Final fallback to first available Item Group
+    return frappe.db.get_value("Item Group", {}, "name")
 
 
 def handle_webhook():
