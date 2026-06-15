@@ -387,7 +387,7 @@ window.render_erpops_orders = function(wrapper) {
             tbody.append(`
 				<tr>
 					<td><input type="checkbox" class="order-select-checkbox"></td>
-					<td><a href="#Form/Sales Order/${o.id}"><b>${o.id}</b></a></td>
+					<td><a class="order-link" data-id="${o.id}" href="/app/sales-order/${o.id}"><b>${o.id}</b></a></td>
 					<td>${o.customer}</td>
 					<td>${o.date}</td>
 					<td><b>${o.total}</b></td>
@@ -414,6 +414,12 @@ window.render_erpops_orders = function(wrapper) {
 
     $(wrapper).find('.btn-refresh-orders').on('click', function() {
         load_orders();
+    });
+
+    $(wrapper).on('click', '.order-link', function(e) {
+        e.preventDefault();
+        var id = $(this).attr('data-id');
+        frappe.set_route('Form', 'Sales Order', id);
     });
 
     // Initial populate
