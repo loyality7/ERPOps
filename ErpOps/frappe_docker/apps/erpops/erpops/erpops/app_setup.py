@@ -224,6 +224,9 @@ def setup_sidebar_workspaces():
         inv_ws.public = 1
         inv_ws.module = "ErpOps"
         
+    inv_ws.public = 1
+    inv_ws.module = "ErpOps"
+    inv_ws.parent_page = ""
     inv_ws.is_hidden = 0
     inv_ws.sequence_id = 2
     inv_ws.links = []
@@ -275,6 +278,9 @@ def setup_sidebar_workspaces():
         ord_ws.public = 1
         ord_ws.module = "ErpOps"
         
+    ord_ws.public = 1
+    ord_ws.module = "ErpOps"
+    ord_ws.parent_page = ""
     ord_ws.is_hidden = 0
     ord_ws.sequence_id = 3
     ord_ws.links = []
@@ -326,6 +332,8 @@ def setup_sidebar_workspaces():
         ret_ws.public = 1
         ret_ws.module = "ErpOps"
         
+    ret_ws.public = 1
+    ret_ws.module = "ErpOps"
     ret_ws.parent_page = ""
     ret_ws.is_hidden = 0
     ret_ws.sequence_id = 3
@@ -349,6 +357,8 @@ def setup_sidebar_workspaces():
         ana_ws.public = 1
         ana_ws.module = "ErpOps"
         
+    ana_ws.public = 1
+    ana_ws.module = "ErpOps"
     ana_ws.parent_page = ""
     ana_ws.is_hidden = 0
     ana_ws.sequence_id = 5
@@ -368,10 +378,10 @@ def setup_sidebar_workspaces():
         chan_ws.name = "Channels"
         chan_ws.label = "Channels"
         chan_ws.title = "Channels"
-        chan_ws.icon = "link"
-        chan_ws.public = 1
-        chan_ws.module = "ErpOps"
         
+    chan_ws.public = 1
+    chan_ws.module = "ErpOps"
+    chan_ws.parent_page = ""
     chan_ws.icon = "link"
     chan_ws.is_hidden = 0
     chan_ws.sequence_id = 4
