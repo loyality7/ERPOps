@@ -751,3 +751,11 @@ def get_sales_orders():
     except Exception as e:
         frappe.log_error(f"Error fetching sales orders: {e}", "ErpOps API")
         return []
+
+
+@frappe.whitelist()
+def show_errors():
+    """Print the last 10 Error Log entries directly to console."""
+    logs = frappe.db.get_all("Error Log", fields=["method", "error"], limit=10, order_by="creation desc")
+    for d in logs:
+        print(f"METHOD: {d.method}\nERROR: {d.error}\n---")
