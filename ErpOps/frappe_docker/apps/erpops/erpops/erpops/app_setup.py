@@ -345,6 +345,29 @@ def setup_sidebar_workspaces():
     ])
     chan_ws.save(ignore_permissions=True)
     
+    # 4. Setup Shopify child Workspace under Channels
+    if frappe.db.exists("Workspace", "Shopify"):
+        shop_ws = frappe.get_doc("Workspace", "Shopify")
+    else:
+        shop_ws = frappe.new_doc("Workspace")
+        shop_ws.name = "Shopify"
+        shop_ws.label = "Shopify"
+        shop_ws.title = "Shopify"
+        shop_ws.icon = "shopping-bag"
+        shop_ws.public = 1
+        shop_ws.module = "ErpOps"
+        
+    shop_ws.parent_page = "Channels"
+    shop_ws.is_hidden = 0
+    shop_ws.sequence_id = 1
+    shop_ws.links = []
+    shop_ws.shortcuts = []
+    shop_ws.content = json.dumps([
+        {"id": "shop_h1", "type": "header", "data": {"text": "<span class=\"h3\"><b>Shopify</b></span>", "col": 12}},
+        {"id": "shop_sub", "type": "header", "data": {"text": "<span class=\"text-muted\">Manage Shopify sync settings and connection status.</span>", "col": 12}}
+    ])
+    shop_ws.save(ignore_permissions=True)
+    
     frappe.db.commit()
 
 

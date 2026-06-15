@@ -556,6 +556,64 @@ window.render_erpops_channels = function(wrapper) {
     load_chan_status();
 };
 
+window.render_erpops_channels_overview = function(wrapper) {
+    if (!wrapper) return;
+
+    $(wrapper).find('.layout-main-section').html(`
+		<div class="erpops-inventory-container">
+			<div class="inventory-header-desc">
+				<p class="text-muted">Manage your external e-commerce integrations and sales channels.</p>
+			</div>
+			
+			<div class="row">
+				<div class="col-md-6">
+					<!-- Shopify Integration Row -->
+					<div class="inventory-card" style="cursor: pointer; margin-bottom: 20px;" onclick="frappe.set_route('workspaces', 'Shopify')">
+						<div style="padding: 24px; display: flex; justify-content: space-between; align-items: center;">
+							<div style="display: flex; align-items: center; gap: 15px;">
+								<i class="fa fa-shopping-bag text-primary" style="font-size: 24px;"></i>
+								<div>
+									<h4 style="margin: 0 0 4px 0; font-weight: 600;">Shopify</h4>
+									<span id="shopify-overview-status" class="text-muted" style="font-size: 13px;">Checking status...</span>
+								</div>
+							</div>
+							<i class="fa fa-chevron-right text-muted"></i>
+						</div>
+					</div>
+					
+					<!-- Amazon Integration Row (Coming Soon) -->
+					<div class="inventory-card" style="margin-bottom: 20px; opacity: 0.6;">
+						<div style="padding: 24px; display: flex; justify-content: space-between; align-items: center;">
+							<div style="display: flex; align-items: center; gap: 15px;">
+								<i class="fa fa-amazon text-warning" style="font-size: 24px;"></i>
+								<div>
+									<h4 style="margin: 0 0 4px 0; font-weight: 600; color: #475569;">Amazon</h4>
+									<span class="text-muted" style="font-size: 13px;">Coming soon</span>
+								</div>
+							</div>
+							<i class="fa fa-lock text-muted"></i>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+    `);
+
+    // Fetch and populate overview status
+    frappe.call({
+        method: 'erpops.erpops.api.get_shopify_status',
+        callback: function(r) {
+            if (r.message && r.message.success) {
+                var status = r.message;
+                var text = status.enable_shopify === 1 ? 'Connected to ' + status.shopify_url : 'Disconnected';
+                var color = status.enable_shopify === 1 ? '#10b981' : '#ef4444';
+                $(wrapper).find('#shopify-overview-status')
+                    .html(`<span style="color: ${color}; font-weight: 600;">${text}</span>`);
+            }
+        }
+    });
+};
+
 $(document).ready(function() {
     console.log("Alaiy OS Global Router loaded.");
     
@@ -624,8 +682,31 @@ $(document).ready(function() {
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
-                        if ($(wrapper).find('#shopify-toggle-enable').length === 0) {
+                        if ($(wrapper).find('#shopify-overview-status').length === 0) {
                             console.log("Injecting custom Channels panel into Workspace layout...");
+                            frappe.require("/assets/erpops/css/inventory_page.css", function() {
+                                window.render_erpops_channels_overview(wrapper);
+                            });
+                        }
+                    }
+                    if (attempts > 50) {
+                        clearInterval(interval);
+                    }
+                }, 100);
+            } else if (route_lower === 'workspaces/shopify' || 
+                       route_lower === 'workspace/shopify' || 
+                       route_lower === 'shopify') {
+                
+                var attempts = 0;
+                var interval = setInterval(function() {
+                    attempts++;
+                    var wrapper = frappe.container && frappe.container.page && frappe.container.page.wrapper;
+                    console.log("[Alaiy OS Router] Checking Shopify wrapper, attempt:", attempts, "Wrapper:", wrapper ? "found" : "null");
+                    if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
+                        clearInterval(interval);
+                        console.log("[Alaiy OS Router] Found main layout section!");
+                        if ($(wrapper).find('#shopify-toggle-enable').length === 0) {
+                            console.log("Injecting custom Shopify details panel into Workspace layout...");
                             frappe.require("/assets/erpops/css/inventory_page.css", function() {
                                 window.render_erpops_channels(wrapper);
                             });
