@@ -5,6 +5,7 @@ app_description = "ErpOps custom app: Shopify API, Marketplace Alerts/Feeds"
 app_email = "operator@example.com"
 app_license = "MIT"
 app_version = "0.0.1"
+app_logo_url = "/assets/erpops/images/logo.png"
 
 scheduler_events = {
     "all": [

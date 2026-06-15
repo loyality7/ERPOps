@@ -6,6 +6,7 @@ def after_migrate():
     setup_workspace()
     hide_standard_workspaces()
     setup_shopify_integration()
+    setup_branding()
 
 def create_custom_fields():
     """Programmatically create custom fields required for Shopify integration."""
@@ -318,3 +319,37 @@ def setup_shopify_integration():
             
     except Exception as e:
         print(f"Automatic Shopify setup: Failed to register webhooks: {e}")
+
+def setup_branding():
+    """Configure Alaiy OS branding globally."""
+    print("Setting up Alaiy OS branding...")
+    
+    # 1. Update System Settings
+    try:
+        system_settings = frappe.get_doc("System Settings")
+        system_settings.app_name = "Alaiy OS"
+        system_settings.save(ignore_permissions=True)
+        print("  - System Settings app_name set to Alaiy OS")
+    except Exception as e:
+        print(f"  - Failed to update System Settings: {e}")
+        
+    # 2. Update Navbar Settings
+    try:
+        navbar_settings = frappe.get_doc("Navbar Settings")
+        navbar_settings.app_logo = "/assets/erpops/images/logo.png"
+        navbar_settings.save(ignore_permissions=True)
+        print("  - Navbar Settings logo updated.")
+    except Exception as e:
+        print(f"  - Failed to update Navbar Settings: {e}")
+        
+    # 3. Update Website Settings
+    try:
+        website_settings = frappe.get_doc("Website Settings")
+        website_settings.app_logo = "/assets/erpops/images/logo.png"
+        website_settings.brand_html = '<span class="h4"><b>Alaiy OS</b></span>'
+        website_settings.save(ignore_permissions=True)
+        print("  - Website Settings brand and logo updated.")
+    except Exception as e:
+        print(f"  - Failed to update Website Settings: {e}")
+        
+    frappe.db.commit()
