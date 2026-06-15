@@ -88,6 +88,8 @@ class ShopifyClient:
               lineItems(first: 50) {
                 nodes {
                   id title quantity sku
+                  variant { id }
+                  product { id }
                   originalUnitPriceSet {
                     shopMoney { amount currencyCode }
                   }

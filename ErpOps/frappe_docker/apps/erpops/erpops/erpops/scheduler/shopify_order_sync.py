@@ -21,8 +21,12 @@ def sync_shopify_orders():
         for order in orders:
             shopify_id = order.get("id", "")
             if not frappe.db.exists("Sales Order", {"custom_shopify_order_id": shopify_id}):
-                _create_sales_order_from_shopify(order)
-                created += 1
+                try:
+                    _create_sales_order_from_shopify(order)
+                    created += 1
+                    frappe.db.commit()
+                except Exception as ord_err:
+                    frappe.log_error(f"Failed to sync Shopify Order {order.get('name')}: {ord_err}", "Shopify Order Sync")
 
         frappe.db.set_single_value(
             "Shopify Setting", "last_inventory_sync", frappe.utils.now_datetime()
@@ -103,6 +107,27 @@ def _create_sales_order_from_shopify(order):
         customer = c.name
 
     so = frappe.new_doc("Sales Order")
+    
+    # Resolve company
+    company = frappe.db.get_single_value("Global Defaults", "default_company")
+    if not company:
+        companies = frappe.get_all("Company", limit=1)
+        company = companies[0].name if companies else "Gain and Shine"
+    so.company = company
+
+    # Resolve currency
+    currency = order.get("totalPriceSet", {}).get("shopMoney", {}).get("currencyCode")
+    if not currency:
+        currency = frappe.db.get_value("Company", company, "default_currency") or "INR"
+    so.currency = currency
+
+    # Resolve selling price list
+    price_list = frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name")
+    if not price_list:
+        price_list = frappe.db.get_value("Price List", {"selling": 1}, "name") or "Standard Selling"
+    so.selling_price_list = price_list
+    so.price_list_currency = currency
+
     so.customer = customer
     so.transaction_date = frappe.utils.today()
     so.delivery_date = frappe.utils.add_days(frappe.utils.today(), 3)

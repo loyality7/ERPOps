@@ -61,6 +61,27 @@ def _handle_order_create(order):
     customer_name = _resolve_customer(order)
 
     so = frappe.new_doc("Sales Order")
+    
+    # Resolve company
+    company = frappe.db.get_single_value("Global Defaults", "default_company")
+    if not company:
+        companies = frappe.get_all("Company", limit=1)
+        company = companies[0].name if companies else "Gain and Shine"
+    so.company = company
+
+    # Resolve currency
+    currency = order.get("currency")
+    if not currency:
+        currency = frappe.db.get_value("Company", company, "default_currency") or "INR"
+    so.currency = currency
+
+    # Resolve selling price list
+    price_list = frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name")
+    if not price_list:
+        price_list = frappe.db.get_value("Price List", {"selling": 1}, "name") or "Standard Selling"
+    so.selling_price_list = price_list
+    so.price_list_currency = currency
+
     so.customer = customer_name
     so.transaction_date = frappe.utils.today()
     so.delivery_date = frappe.utils.add_days(frappe.utils.today(), 3)

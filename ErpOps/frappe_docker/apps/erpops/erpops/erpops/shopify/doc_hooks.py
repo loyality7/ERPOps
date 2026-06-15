@@ -7,7 +7,8 @@ def update_site_config(doc, method):
     Hook triggered on Shopify Setting save.
     Syncs database settings to site_config.json so ShopifyClient can authenticate.
     """
-    if not doc.enable_shopify or not doc.password or not doc.shopify_url:
+    password = doc.get_password("password") if hasattr(doc, "get_password") else doc.password
+    if not doc.enable_shopify or not password or not doc.shopify_url:
         return
 
     # Clean shop domain
@@ -26,7 +27,7 @@ def update_site_config(doc, method):
     client_id = os.environ.get("SHOPIFY_CLIENT_ID") or cfg.get("shopify_client_id", "")
     client_secret = os.environ.get("SHOPIFY_CLIENT_SECRET") or cfg.get("shopify_client_secret", "")
 
-    cfg["shopify_access_token"] = doc.password
+    cfg["shopify_access_token"] = password
     cfg["shopify_domain"] = shop
     if client_id:
         cfg["shopify_client_id"] = client_id
