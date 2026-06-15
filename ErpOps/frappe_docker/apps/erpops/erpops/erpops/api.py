@@ -540,63 +540,71 @@ def get_shopify_connect_url():
 @frappe.whitelist()
 def get_product_catalogue():
     """Returns detailed product catalogue for Alaiy OS inventory view."""
-    items = frappe.db.sql("""
-        SELECT
-            i.name AS item_code,
-            i.item_name,
-            i.image,
-            i.brand,
-            i.has_variants,
-            i.variant_of,
-            COALESCE(b.actual_qty, 0) AS actual_qty,
-            COALESCE(b.actual_qty - b.reserved_qty, 0) AS available_qty
-        FROM `tabItem` i
-        LEFT JOIN `tabBin` b ON i.name = b.item_code
-        ORDER BY i.creation DESC
-    """, as_dict=True)
-    
-    # Get all Shopify integrations mapping
-    mappings = frappe.get_all(
-        "Ecommerce Item",
-        fields=["erpnext_item_code", "integration_item_code", "integration"]
-    )
-    
-    mapping_map = {}
-    for m in mappings:
-        if m.integration == "Shopify":
-            mapping_map[m.erpnext_item_code] = m.integration_item_code
-            
-    # Calculate variants count
-    templates = [i.item_code for i in items if i.has_variants]
-    variant_counts = {}
-    if templates:
-        counts = frappe.db.sql("""
-            SELECT variant_of, COUNT(*) as count 
-            FROM `tabItem` 
-            WHERE variant_of IN %s 
-            GROUP BY variant_of
-        """, (templates,), as_dict=True)
-        variant_counts = {c.variant_of: c.count for c in counts}
+    try:
+        items = frappe.db.sql("""
+            SELECT
+                i.name AS item_code,
+                i.item_name,
+                i.image,
+                i.brand,
+                i.has_variants,
+                i.variant_of,
+                SUM(COALESCE(b.actual_qty, 0)) AS actual_qty,
+                SUM(COALESCE(b.actual_qty - b.reserved_qty, 0)) AS available_qty
+            FROM `tabItem` i
+            LEFT JOIN `tabBin` b ON i.name = b.item_code
+            GROUP BY i.name
+            ORDER BY i.creation DESC
+        """, as_dict=True)
         
-    result = []
-    for i in items:
-        var_count = 1
-        if i.has_variants:
-            var_count = variant_counts.get(i.item_code, 0)
+        # Get all Shopify integrations mapping safely
+        mapping_map = {}
+        try:
+            mappings = frappe.get_all(
+                "Ecommerce Item",
+                fields=["erpnext_item_code", "integration_item_code", "integration"]
+            )
+            for m in mappings:
+                if m.integration == "Shopify":
+                    mapping_map[m.erpnext_item_code] = m.integration_item_code
+        except Exception as e:
+            frappe.logger().error(f"Error loading Ecommerce Item mappings: {e}")
             
-        shopify_id = mapping_map.get(i.item_code)
-        
-        result.append({
-            "item_code": i.item_code,
-            "item_name": i.item_name,
-            "image": i.image or "/assets/erpops/images/logo.png",
-            "brand": i.brand or "Generic",
-            "variants": f"{var_count} variant" if var_count == 1 else f"{var_count} variants",
-            "available": int(i.available_qty),
-            "on_hand": int(i.actual_qty),
-            "shopify_status": "Synced" if shopify_id else "Not synced",
-            "shopify_id": shopify_id
-        })
+        # Calculate variants count
+        templates = [i.item_code for i in items if i.has_variants]
+        variant_counts = {}
+        if templates:
+            counts = frappe.db.sql("""
+                SELECT variant_of, COUNT(*) as count 
+                FROM `tabItem` 
+                WHERE variant_of IN %s 
+                GROUP BY variant_of
+            """, (templates,), as_dict=True)
+            variant_counts = {c.variant_of: c.count for c in counts}
+            
+        result = []
+        for i in items:
+            var_count = 1
+            if i.has_variants:
+                var_count = variant_counts.get(i.item_code, 0)
+                
+            shopify_id = mapping_map.get(i.item_code)
+            
+            result.append({
+                "item_code": i.item_code,
+                "item_name": i.item_name,
+                "image": i.image or "/assets/erpops/images/logo.png",
+                "brand": i.brand or "Generic",
+                "variants": f"{var_count} variant" if var_count == 1 else f"{var_count} variants",
+                "available": int(i.available_qty),
+                "on_hand": int(i.actual_qty),
+                "shopify_status": "Synced" if shopify_id else "Not synced",
+                "shopify_id": shopify_id
+            })
+        return result
+    except Exception as e:
+        frappe.log_error(f"Error loading product catalogue: {e}", "ErpOps")
+        return []
         
 
 @frappe.whitelist()
@@ -618,8 +626,12 @@ def get_shopify_status():
     """Returns the current status of the Shopify integration."""
     try:
         doc = frappe.get_doc("Shopify Setting")
-        # Get last sync info from logs if available
-        last_sync = frappe.db.get_value("Marketplace Alert", {}, "creation", order_by="creation desc") or "Never synced"
+        last_sync = frappe.db.get_single_value("Shopify Setting", "last_inventory_sync")
+        if last_sync:
+            last_sync = frappe.utils.format_datetime(last_sync)
+        else:
+            last_sync = "Never synced"
+            
         return {
             "success": True,
             "enable_shopify": doc.enable_shopify or 0,

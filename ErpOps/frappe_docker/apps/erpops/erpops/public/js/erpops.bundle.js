@@ -568,7 +568,7 @@ window.render_erpops_channels_overview = function(wrapper) {
 			<div class="row">
 				<div class="col-md-6">
 					<!-- Shopify Integration Row -->
-					<div class="inventory-card" style="cursor: pointer; margin-bottom: 20px;" onclick="frappe.set_route('workspaces', 'Shopify')">
+					<div class="inventory-card" style="cursor: pointer; margin-bottom: 20px;" onclick="frappe.set_route('workspace', 'Shopify')">
 						<div style="padding: 24px; display: flex; justify-content: space-between; align-items: center;">
 							<div style="display: flex; align-items: center; gap: 15px;">
 								<i class="fa fa-shopping-bag text-primary" style="font-size: 24px;"></i>
