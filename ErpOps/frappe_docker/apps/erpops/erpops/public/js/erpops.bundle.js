@@ -443,10 +443,6 @@ window.render_erpops_orders = function(wrapper) {
 window.render_custom_sidebar = function() {
     var sidebar = $('.desk-sidebar');
     if (sidebar.length && $('.custom-alaiy-sidebar').length === 0) {
-        var user_email = (frappe.session && frappe.session.user) || "admin@altomoda.com";
-        var user_role = (frappe.session && frappe.session.user === 'Administrator') ? 'ADMIN' : 'USER';
-        var user_initials = user_email.substring(0, 2).toUpperCase();
-
         sidebar.html(`
 			<div class="custom-alaiy-sidebar">
 				<div class="sidebar-header">
@@ -513,50 +509,6 @@ window.render_custom_sidebar = function() {
 							<span class="switch-slider"></span>
 						</label>
 					</div>
-
-					<div class="channel-item">
-						<div class="channel-info">
-							<div class="channel-icon-wrapper">
-								<i class="fa fa-database"></i>
-							</div>
-							<div class="channel-details">
-								<span class="channel-name">Myntra</span>
-								<span class="channel-sync">synced 18m ago</span>
-							</div>
-						</div>
-						<label class="switch-container">
-							<input type="checkbox" checked id="toggle-myntra">
-							<span class="switch-slider"></span>
-						</label>
-					</div>
-
-					<div class="channel-item">
-						<div class="channel-info">
-							<div class="channel-icon-wrapper">
-								<i class="fa fa-exchange"></i>
-							</div>
-							<div class="channel-details">
-								<span class="channel-name">Ajio <i class="fa fa-check-circle text-success" style="font-size:10px;"></i></span>
-								<span class="channel-sync">synced 34m ago</span>
-							</div>
-						</div>
-						<label class="switch-container">
-							<input type="checkbox" checked id="toggle-ajio">
-							<span class="switch-slider"></span>
-						</label>
-					</div>
-				</div>
-
-				<div class="sidebar-footer">
-					<div class="user-profile">
-						<div class="user-avatar">${user_initials}</div>
-						<div class="user-info">
-							<span class="user-email">${user_email}</span>
-							<span class="user-role">${user_role}</span>
-						</div>
-						<a class="logout-btn" href="#logout" onclick="frappe.session.handle_logout()"><i class="fa fa-sign-out"></i></a>
-					</div>
-					<a class="settings-link" href="#Form/System Settings"><i class="fa fa-cog"></i> Settings</a>
 				</div>
 			</div>
         `);
@@ -566,22 +518,6 @@ window.render_custom_sidebar = function() {
             var active = $(this).prop('checked');
             frappe.show_alert({
                 message: "Shopify Sync " + (active ? "Enabled" : "Disabled"),
-                indicator: active ? "green" : "orange"
-            });
-        });
-        
-        $('#toggle-myntra').on('change', function() {
-            var active = $(this).prop('checked');
-            frappe.show_alert({
-                message: "Myntra Sync " + (active ? "Enabled" : "Disabled"),
-                indicator: active ? "green" : "orange"
-            });
-        });
-        
-        $('#toggle-ajio').on('change', function() {
-            var active = $(this).prop('checked');
-            frappe.show_alert({
-                message: "Ajio Sync " + (active ? "Enabled" : "Disabled"),
                 indicator: active ? "green" : "orange"
             });
         });
@@ -626,9 +562,7 @@ $(document).ready(function() {
                 var wrapper = frappe.container.page.wrapper;
                 if (wrapper && $(wrapper).find('.erpops-inventory-container').length === 0) {
                     console.log("Injecting custom Product Catalogue into Workspace layout...");
-                    frappe.require("/assets/erpops/css/inventory_page.css", function() {
-                        window.render_erpops_inventory(wrapper);
-                    });
+                    window.render_erpops_inventory(wrapper);
                 }
             } else if (route_lower === 'workspaces/orders' || 
                        route_lower === 'workspace/orders' || 
@@ -637,9 +571,7 @@ $(document).ready(function() {
                 var wrapper = frappe.container.page.wrapper;
                 if (wrapper && $(wrapper).find('.erpops-tabs-header').length === 0) {
                     console.log("Injecting custom Orders & Returns panel into Workspace layout...");
-                    frappe.require("/assets/erpops/css/inventory_page.css", function() {
-                        window.render_erpops_orders(wrapper);
-                    });
+                    window.render_erpops_orders(wrapper);
                 }
             } else if (route_lower === 'returns') {
                 // Route to Orders workspace and open Returns tab
