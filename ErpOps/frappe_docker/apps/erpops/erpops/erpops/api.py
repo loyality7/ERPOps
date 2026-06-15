@@ -72,7 +72,12 @@ def get_kpi_summary():
     except Exception as e:
         frappe.logger().error(f"Error reading Shopify Settings for KPI: {e}")
 
-    shopify_orders_count = frappe.db.count("Sales Order", {"custom_channel": "shopify"})
+    shopify_orders_count = 0
+    try:
+        if frappe.get_meta("Sales Order").has_field("custom_channel"):
+            shopify_orders_count = frappe.db.count("Sales Order", {"custom_channel": "shopify"})
+    except Exception:
+        pass
 
     return {
         "orders_today": int(orders_today),
@@ -721,19 +726,33 @@ def get_shopify_status():
 def get_sales_orders():
     """Returns list of Sales Orders for Alaiy OS orders view."""
     try:
-        orders = frappe.db.sql("""
+        # Safely determine if custom fields exist
+        has_payment_status = False
+        has_channel = False
+        try:
+            meta = frappe.get_meta("Sales Order")
+            has_payment_status = meta.has_field("custom_payment_status")
+            has_channel = meta.has_field("custom_channel")
+        except Exception:
+            pass
+
+        payment_col = "so.custom_payment_status" if has_payment_status else "'Unpaid'"
+        channel_col = "so.custom_channel" if has_channel else "'ERPNext'"
+
+        query = f"""
             SELECT
                 so.name AS id,
                 so.customer_name AS customer,
                 so.transaction_date AS date,
                 so.grand_total AS total,
-                COALESCE(so.custom_payment_status, 'Unpaid') AS payment,
+                COALESCE({payment_col}, 'Unpaid') AS payment,
                 so.status AS fulfillment,
-                COALESCE(so.custom_channel, 'ERPNext') AS channel
+                COALESCE({channel_col}, 'ERPNext') AS channel
             FROM `tabSales Order` so
             ORDER BY so.creation DESC
             LIMIT 100
-        """, as_dict=True)
+        """
+        orders = frappe.db.sql(query, as_dict=True)
         
         # Format values nicely
         for o in orders:
@@ -749,7 +768,7 @@ def get_sales_orders():
                 
         return orders
     except Exception as e:
-        frappe.log_error(f"Error fetching sales orders: {e}", "ErpOps API")
+        frappe.log_error(title="ErpOps API", message=f"Error fetching sales orders: {e}")
         return []
 
 
