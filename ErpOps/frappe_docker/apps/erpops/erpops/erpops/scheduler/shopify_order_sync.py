@@ -4,45 +4,71 @@ import frappe
 def get_customer_group():
     # Check Shopify Setting safely
     group = None
-    if frappe.get_meta("Shopify Setting").has_field("customer_group"):
-        group = frappe.db.get_single_value("Shopify Setting", "customer_group")
+    try:
+        if frappe.get_meta("Shopify Setting").has_field("customer_group"):
+            group = frappe.db.get_single_value("Shopify Setting", "customer_group")
+    except Exception:
+        pass
         
     if group and frappe.db.exists("Customer Group", {"name": group, "is_group": 0}):
         return group
     # Check Selling Settings default safely
     group = None
-    if frappe.get_meta("Selling Settings").has_field("customer_group"):
-        group = frappe.db.get_single_value("Selling Settings", "customer_group")
+    try:
+        if frappe.get_meta("Selling Settings").has_field("customer_group"):
+            group = frappe.db.get_single_value("Selling Settings", "customer_group")
+    except Exception:
+        pass
     if group and frappe.db.exists("Customer Group", {"name": group, "is_group": 0}):
         return group
     # Fallback to standard non-group Customer Group
-    fallback = frappe.db.get_value("Customer Group", {"is_group": 0}, "name")
+    fallback = None
+    try:
+        fallback = frappe.db.get_value("Customer Group", {"is_group": 0}, "name")
+    except Exception:
+        pass
     if fallback:
         return fallback
     # Final fallback to first available Customer Group
-    return frappe.db.get_value("Customer Group", {}, "name")
+    try:
+        return frappe.db.get_value("Customer Group", {}, "name")
+    except Exception:
+        return None
 
 
 def get_item_group():
     # Check Shopify Setting safely
     group = None
-    if frappe.get_meta("Shopify Setting").has_field("item_group"):
-        group = frappe.db.get_single_value("Shopify Setting", "item_group")
+    try:
+        if frappe.get_meta("Shopify Setting").has_field("item_group"):
+            group = frappe.db.get_single_value("Shopify Setting", "item_group")
+    except Exception:
+        pass
         
     if group and frappe.db.exists("Item Group", {"name": group, "is_group": 0}):
         return group
     # Check Stock Settings default safely
     group = None
-    if frappe.get_meta("Stock Settings").has_field("default_item_group"):
-        group = frappe.db.get_single_value("Stock Settings", "default_item_group")
+    try:
+        if frappe.get_meta("Stock Settings").has_field("default_item_group"):
+            group = frappe.db.get_single_value("Stock Settings", "default_item_group")
+    except Exception:
+        pass
     if group and frappe.db.exists("Item Group", {"name": group, "is_group": 0}):
         return group
     # Fallback to standard non-group Item Group
-    fallback = frappe.db.get_value("Item Group", {"is_group": 0}, "name")
+    fallback = None
+    try:
+        fallback = frappe.db.get_value("Item Group", {"is_group": 0}, "name")
+    except Exception:
+        pass
     if fallback:
         return fallback
     # Final fallback to first available Item Group
-    return frappe.db.get_value("Item Group", {}, "name")
+    try:
+        return frappe.db.get_value("Item Group", {}, "name")
+    except Exception:
+        return None
 
 
 def sync_shopify_orders():
@@ -59,24 +85,33 @@ def sync_shopify_orders():
         from_date = None
         to_date = None
 
-        meta = frappe.get_meta("Shopify Setting")
-        if meta.has_field("custom_sync_old_orders"):
-            sync_old = frappe.db.get_single_value("Shopify Setting", "custom_sync_old_orders") or 0
-        if meta.has_field("custom_from_date"):
-            from_date = frappe.db.get_single_value("Shopify Setting", "custom_from_date")
-        if meta.has_field("custom_to_date"):
-            to_date = frappe.db.get_single_value("Shopify Setting", "custom_to_date")
+        try:
+            meta = frappe.get_meta("Shopify Setting")
+            if meta.has_field("custom_sync_old_orders"):
+                sync_old = frappe.db.get_single_value("Shopify Setting", "custom_sync_old_orders") or 0
+            if meta.has_field("custom_from_date"):
+                from_date = frappe.db.get_single_value("Shopify Setting", "custom_from_date")
+            if meta.has_field("custom_to_date"):
+                to_date = frappe.db.get_single_value("Shopify Setting", "custom_to_date")
+        except Exception:
+            pass
 
         if sync_old and from_date:
             orders = shopify.get_orders(since=from_date, to_date=to_date)
             # Reset the checkbox in the database so it only runs once
-            frappe.db.set_single_value("Shopify Setting", "custom_sync_old_orders", 0)
-            frappe.db.commit()
+            try:
+                frappe.db.set_single_value("Shopify Setting", "custom_sync_old_orders", 0)
+                frappe.db.commit()
+            except Exception:
+                pass
         else:
-            last_sync = (
-                frappe.db.get_single_value("Shopify Setting", "last_inventory_sync")
-                or frappe.utils.add_days(frappe.utils.now_datetime(), -30)
-            )
+            last_sync = None
+            try:
+                last_sync = frappe.db.get_single_value("Shopify Setting", "last_inventory_sync")
+            except Exception:
+                pass
+            if not last_sync:
+                last_sync = frappe.utils.add_days(frappe.utils.now_datetime(), -30)
             orders = shopify.get_orders(since=last_sync)
 
         created = 0
@@ -90,10 +125,13 @@ def sync_shopify_orders():
                 except Exception as ord_err:
                     frappe.log_error(f"Failed to sync Shopify Order {order.get('name')}: {ord_err}", "Shopify Order Sync")
 
-        frappe.db.set_single_value(
-            "Shopify Setting", "last_inventory_sync", frappe.utils.now_datetime()
-        )
-        frappe.db.commit()
+        try:
+            frappe.db.set_single_value(
+                "Shopify Setting", "last_inventory_sync", frappe.utils.now_datetime()
+            )
+            frappe.db.commit()
+        except Exception:
+            pass
 
         if created:
             frappe.logger().info(f"Shopify sync: created {created} Sales Orders")
@@ -141,6 +179,7 @@ def sync_shopify_products():
                             b = frappe.new_doc("Brand")
                             b.brand_name = brand_name
                             b.insert(ignore_permissions=True)
+                            frappe.db.commit()
                         except Exception:
                             brand_name = None
                     item.brand = brand_name
@@ -175,7 +214,7 @@ def sync_shopify_products():
                             eco.erpnext_item_code = sku
                             eco.integration_item_code = clean_variant_id
                             eco.integration = "Shopify"
-                            eco.insert(ignore_permissions=True)
+                            eco.insert(ignore_permissions=True, ignore_if_duplicate=True)
                         except Exception as eco_err:
                             frappe.logger().warn(f"Failed to create Ecommerce Item mapping: {eco_err}")
 
@@ -281,7 +320,7 @@ def _create_sales_order_from_shopify(order):
                     eco.erpnext_item_code = item_code
                     eco.integration_item_code = clean_shopify_id
                     eco.integration = "Shopify"
-                    eco.insert(ignore_permissions=True)
+                    eco.insert(ignore_permissions=True, ignore_if_duplicate=True)
                 except Exception as ex:
                     frappe.log_error(f"Failed to auto-create Ecommerce Item mapping during order sync: {ex}", "Shopify Sync")
 
