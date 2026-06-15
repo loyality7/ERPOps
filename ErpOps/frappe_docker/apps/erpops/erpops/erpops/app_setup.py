@@ -190,7 +190,7 @@ def hide_standard_workspaces():
         "Build", "Projects", "Support", "Manufacturing", "Quality", "Agriculture", 
         "Settings", "Tools", "Integrations", "Users", "Website", "Loans", "Retail",
         "Workspaces", "Education", "Healthcare", "Data Import and Export", "Desk", 
-        "Utilities"
+        "Utilities", "ERPNext Settings", "ERPNext Integrations"
     ]
     for name in workspaces_to_hide:
         if frappe.db.exists("Workspace", name):
@@ -200,6 +200,117 @@ def hide_standard_workspaces():
     if frappe.db.exists("Workspace", "ErpOps"):
         frappe.db.set_value("Workspace", "ErpOps", "is_hidden", 0)
         
+    frappe.db.commit()
+    
+    # Programmatically construct sidebar workspaces
+    setup_sidebar_workspaces()
+
+def setup_sidebar_workspaces():
+    """Setup custom Inventory and Orders workspaces in the sidebar."""
+    import json
+    
+    # 1. Setup Inventory Workspace
+    if frappe.db.exists("Workspace", "Inventory"):
+        inv_ws = frappe.get_doc("Workspace", "Inventory")
+    else:
+        inv_ws = frappe.new_doc("Workspace")
+        inv_ws.name = "Inventory"
+        inv_ws.label = "Inventory"
+        inv_ws.title = "Inventory"
+        inv_ws.icon = "stock"
+        inv_ws.public = 1
+        inv_ws.module = "ErpOps"
+        
+    inv_ws.is_hidden = 0
+    inv_ws.sequence_id = 2
+    inv_ws.links = []
+    inv_ws.append("links", {
+        "type": "Card Break",
+        "label": "Inventory View"
+    })
+    inv_ws.append("links", {
+        "link_type": "DocType",
+        "link_to": "Item",
+        "label": "Product Catalogue",
+        "type": "Link",
+        "icon": "item"
+    })
+    inv_ws.append("links", {
+        "link_type": "DocType",
+        "link_to": "Warehouse",
+        "label": "Warehouses",
+        "type": "Link",
+        "icon": "warehouse"
+    })
+    
+    inv_ws.shortcuts = []
+    inv_ws.append("shortcuts", {
+        "type": "DocType",
+        "link_to": "Item",
+        "label": "Product Catalogue",
+        "icon": "item",
+        "color": "Blue"
+    })
+    
+    inv_ws.content = json.dumps([
+        {"id": "inv_h1", "type": "header", "data": {"text": "<span class=\"h3\"><b>Inventory</b></span>", "col": 12}},
+        {"id": "inv_sub", "type": "header", "data": {"text": "<span class=\"text-muted\">Full product catalogue — every SKU across all suppliers and channels.</span>", "col": 12}},
+        {"id": "inv_sc1", "type": "shortcut", "data": {"shortcut_name": "Product Catalogue", "label": "Product Catalogue", "icon": "item", "color": "Blue", "col": 4}},
+        {"id": "inv_sp1", "type": "spacer", "data": {"col": 12}}
+    ])
+    inv_ws.save(ignore_permissions=True)
+    
+    # 2. Setup Orders Workspace
+    if frappe.db.exists("Workspace", "Orders"):
+        ord_ws = frappe.get_doc("Workspace", "Orders")
+    else:
+        ord_ws = frappe.new_doc("Workspace")
+        ord_ws.name = "Orders"
+        ord_ws.label = "Orders"
+        ord_ws.title = "Orders"
+        ord_ws.icon = "sell"
+        ord_ws.public = 1
+        ord_ws.module = "ErpOps"
+        
+    ord_ws.is_hidden = 0
+    ord_ws.sequence_id = 3
+    ord_ws.links = []
+    ord_ws.append("links", {
+        "type": "Card Break",
+        "label": "Order View"
+    })
+    ord_ws.append("links", {
+        "link_type": "DocType",
+        "link_to": "Sales Order",
+        "label": "Sales Orders",
+        "type": "Link",
+        "icon": "sales"
+    })
+    ord_ws.append("links", {
+        "link_type": "DocType",
+        "link_to": "Sales Invoice",
+        "label": "Sales Invoices",
+        "type": "Link",
+        "icon": "invoice"
+    })
+    
+    ord_ws.shortcuts = []
+    ord_ws.append("shortcuts", {
+        "type": "DocType",
+        "link_to": "Sales Order",
+        "label": "Sales Orders",
+        "icon": "sales",
+        "color": "Green"
+    })
+    
+    ord_ws.content = json.dumps([
+        {"id": "ord_h1", "type": "header", "data": {"text": "<span class=\"h3\"><b>Orders</b></span>", "col": 12}},
+        {"id": "ord_sub", "type": "header", "data": {"text": "<span class=\"text-muted\">Manage and view customer sales orders and invoices.</span>", "col": 12}},
+        {"id": "ord_sc1", "type": "shortcut", "data": {"shortcut_name": "Sales Orders", "label": "Sales Orders", "icon": "sales", "color": "Green", "col": 4}},
+        {"id": "ord_sp1", "type": "spacer", "data": {"col": 12}}
+    ])
+    ord_ws.save(ignore_permissions=True)
+    
     frappe.db.commit()
 
 
