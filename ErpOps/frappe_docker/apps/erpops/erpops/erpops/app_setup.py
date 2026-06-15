@@ -253,7 +253,20 @@ def setup_shopify_integration():
     doc.enable_shopify = 1
     doc.shopify_url = shop
     doc.password = token
-    doc.save(ignore_permissions=True)
+
+    # Mock frappe.request to prevent "RuntimeError: object is not bound" during CLI migrate
+    class MockRequest:
+        def __init__(self, host):
+            self.host = host
+
+    frappe.local.request = MockRequest("erp-test.gainandshine.com")
+    
+    try:
+        doc.save(ignore_permissions=True)
+    finally:
+        if hasattr(frappe.local, "request"):
+            delattr(frappe.local, "request")
+
     frappe.db.commit()
     print("Automatic Shopify setup: Database Shopify Setting updated.")
     
