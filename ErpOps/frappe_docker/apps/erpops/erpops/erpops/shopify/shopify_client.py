@@ -339,11 +339,19 @@ class ShopifyClient:
             raise Exception(f"Return refund errors: {errors}")
         return rr.get("refund", {})
 
-    def get_products(self, limit=50):
-        """Return list of products."""
+    def get_products(self, limit=250):
+        """Return all products by paginating through pages of size limit."""
+        all_products = []
+        has_next_page = True
+        after_cursor = None
+
         gql = """
-        query GetProducts($limit: Int!) {
-          products(first: $limit) {
+        query GetProducts($limit: Int!, $after: String) {
+          products(first: $limit, after: $after) {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
             nodes {
               id title vendor status totalInventory
               featuredImage { url }
@@ -354,8 +362,21 @@ class ShopifyClient:
           }
         }
         """
-        data = self.query(gql, {"limit": limit})
-        return data.get("products", {}).get("nodes", [])
+        while has_next_page:
+            data = self.query(gql, {"limit": limit, "after": after_cursor})
+            products_data = data.get("products", {})
+            nodes = products_data.get("nodes", [])
+            all_products.extend(nodes)
+
+            page_info = products_data.get("pageInfo", {})
+            has_next_page = page_info.get("hasNextPage", False)
+            after_cursor = page_info.get("endCursor", None)
+            
+            # Prevent infinite loop in case of API issues
+            if not nodes or not after_cursor:
+                break
+
+        return all_products
 
     def create_product(self, title, description="", vendor="", tags=None, status="ACTIVE"):
         """Create a new product."""

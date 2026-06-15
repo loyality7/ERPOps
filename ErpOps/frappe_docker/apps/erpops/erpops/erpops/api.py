@@ -626,7 +626,7 @@ def get_product_catalogue():
                 "brand": i.brand or "Generic",
                 "variants": f"{var_count} variant" if var_count == 1 else f"{var_count} variants",
                 "has_variants": int(i.has_variants or 0),
-                "available": int(i.available_qty),
+                "available": max(0, int(i.available_qty)),
                 "on_hand": int(i.actual_qty),
                 "shopify_status": is_synced,
                 "shopify_id": shopify_id
@@ -686,7 +686,7 @@ def get_item_variants(item_code):
                 "item_name": v.item_name,
                 "image": v.image or "/assets/erpops/images/logo.png",
                 "brand": v.brand or "Generic",
-                "available": int(v.available_qty),
+                "available": max(0, int(v.available_qty)),
                 "on_hand": int(v.actual_qty),
                 "shopify_status": is_synced,
                 "shopify_id": shopify_id
