@@ -83,7 +83,7 @@
 	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
-.search-icon {
+.search-box-container .search-icon {
 	position: absolute;
 	left: 10px;
 	top: 10px;
@@ -500,19 +500,13 @@ input:checked + .erpops-slider:before {
 	color: #94a3b8 !important;
 }
 
-/* Ensure nested sidebar child item icons are displayed */
-.nested-container .icon,
-.sidebar-child-item .icon {
-	display: inline-block !important;
-}
-
 /* Align nested child link and reduce excess left gap */
 .sidebar-child-item .sidebar-link {
 	padding-left: 8px !important;
 }
 
-/* Add a clean dot bullet fallback indicator for child links without icons */
-.sidebar-child-item .sidebar-link:not(:has(.icon)):not(:has(svg))::before {
+/* Add a clean dot bullet indicator for child links */
+.sidebar-child-item .sidebar-link::before {
 	content: "•";
 	margin-right: 8px;
 	color: #94a3b8;

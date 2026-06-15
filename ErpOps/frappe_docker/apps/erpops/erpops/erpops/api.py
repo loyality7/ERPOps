@@ -611,6 +611,7 @@ def get_product_catalogue():
                 "image": i.image or "/assets/erpops/images/logo.png",
                 "brand": i.brand or "Generic",
                 "variants": f"{var_count} variant" if var_count == 1 else f"{var_count} variants",
+                "has_variants": int(i.has_variants or 0),
                 "available": int(i.available_qty),
                 "on_hand": int(i.actual_qty),
                 "shopify_status": is_synced,
@@ -619,6 +620,66 @@ def get_product_catalogue():
         return result
     except Exception as e:
         frappe.log_error(f"Error loading product catalogue: {e}", "ErpOps")
+        return []
+
+@frappe.whitelist()
+def get_item_variants(item_code):
+    """Returns list of variants for a template item, including their inventory quantities."""
+    try:
+        variants = frappe.db.sql("""
+            SELECT
+                i.name AS item_code,
+                i.item_name,
+                COALESCE(i.image, p_item.image) AS image,
+                COALESCE(i.brand, p_item.brand) AS brand,
+                SUM(COALESCE(b.actual_qty, 0)) AS actual_qty,
+                SUM(COALESCE(b.actual_qty - b.reserved_qty, 0)) AS available_qty
+            FROM `tabItem` i
+            LEFT JOIN `tabItem` p_item ON i.variant_of = p_item.name
+            LEFT JOIN `tabBin` b ON i.name = b.item_code
+            WHERE i.variant_of = %s
+            GROUP BY i.name
+            ORDER BY i.name ASC
+        """, (item_code,), as_dict=True)
+        
+        # Get Shopify integration mapping safely
+        mapping_map = {}
+        try:
+            mappings = frappe.get_all(
+                "Ecommerce Item",
+                filters={"erpnext_item_code": ["in", [v.item_code for v in variants]]},
+                fields=["erpnext_item_code", "integration_item_code", "integration"]
+            )
+            for m in mappings:
+                if m.integration == "Shopify":
+                    mapping_map[m.erpnext_item_code] = m.integration_item_code
+        except Exception:
+            pass
+            
+        result = []
+        for v in variants:
+            shopify_id = mapping_map.get(v.item_code)
+            is_shopify_group = v.item_code.startswith("SPY-") or v.item_group == "Shopify Items"
+            is_shopify_numeric = v.item_code.isdigit() and len(v.item_code) > 10
+            
+            if not shopify_id and (is_shopify_group or is_shopify_numeric):
+                shopify_id = v.item_code
+                
+            is_synced = "Synced" if (shopify_id or is_shopify_group or is_shopify_numeric) else "Not synced"
+            
+            result.append({
+                "item_code": v.item_code,
+                "item_name": v.item_name,
+                "image": v.image or "/assets/erpops/images/logo.png",
+                "brand": v.brand or "Generic",
+                "available": int(v.available_qty),
+                "on_hand": int(v.actual_qty),
+                "shopify_status": is_synced,
+                "shopify_id": shopify_id
+            })
+        return result
+    except Exception as e:
+        frappe.log_error(f"Error loading item variants: {e}", "ErpOps")
         return []
         
 

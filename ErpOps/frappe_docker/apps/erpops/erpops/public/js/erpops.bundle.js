@@ -132,7 +132,11 @@ window.render_erpops_inventory = function(wrapper) {
             var row = $(`
 				<tr>
 					<td><input type="checkbox" class="product-select-checkbox" data-id="${p.item_code}"></td>
-					<td><i class="fa fa-chevron-right text-muted row-chevron" style="font-size: 10px; cursor: pointer;"></i></td>
+					<td>
+						${p.has_variants ? `
+							<i class="fa fa-chevron-right text-muted row-chevron" style="font-size: 10px; cursor: pointer;" data-item-code="${p.item_code}"></i>
+						` : ''}
+					</td>
 					<td class="product-cell">
 						<img src="${p.image}" class="product-thumb" onerror="this.src='/assets/erpops/images/logo.png'">
 						<div class="product-meta">
@@ -198,6 +202,98 @@ window.render_erpops_inventory = function(wrapper) {
         if (current_page < total_pages) {
             current_page++;
             render_table(displayed_products);
+        }
+    });
+
+    // Toggle row variants expansion
+    $(wrapper).on('click', '.row-chevron', function() {
+        var $icon = $(this);
+        var $tr = $icon.closest('tr');
+        var item_code = $icon.data('item-code');
+        
+        if ($icon.hasClass('fa-chevron-right')) {
+            $icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
+            
+            var $next = $tr.next('.variants-container-row');
+            if ($next.length) {
+                $next.show();
+                return;
+            }
+            
+            var $loadingRow = $(`
+                <tr class="variants-container-row loading-variants">
+                    <td></td>
+                    <td></td>
+                    <td colspan="6" class="py-3">
+                        <i class="fa fa-spinner fa-spin mr-2"></i> Loading variants...
+                    </td>
+                </tr>
+            `);
+            $tr.after($loadingRow);
+            
+            frappe.call({
+                method: 'erpops.erpops.api.get_item_variants',
+                args: { item_code: item_code },
+                callback: function(r) {
+                    $tr.next('.variants-container-row').remove();
+                    if (r.message && r.message.length) {
+                        var variantsHtml = '';
+                        r.message.forEach(function(v) {
+                            var status_class = v.shopify_status === 'Synced' ? 'pill-synced' : 'pill-not-synced';
+                            var status_icon = v.shopify_status === 'Synced' ? '<i class="fa fa-check-circle text-success mr-1"></i>' : '';
+                            
+                            variantsHtml += `
+                                <div class="variant-item-line d-flex align-items-center justify-content-between py-2 border-bottom" style="gap: 12px;">
+                                    <div class="d-flex align-items-center" style="gap: 12px; flex: 1; min-width: 0;">
+                                        <img src="${v.image}" class="product-thumb" style="width: 30px; height: 30px; border-radius: 4px; object-fit: cover;" onerror="this.src='/assets/erpops/images/logo.png'">
+                                        <div class="product-meta" style="min-width: 0;">
+                                            <a href="/app/item/${v.item_code}" class="product-title-link" style="font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${v.item_name}</a>
+                                            <span class="product-sku text-muted" style="font-size: 11px; display: block;">${v.item_code}</span>
+                                        </div>
+                                    </div>
+                                    <div style="width: 120px; font-size: 13px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${v.brand}</div>
+                                    <div style="width: 100px; font-weight: bold; font-size: 13px;" class="${v.available > 0 ? 'text-success' : 'text-warning'}">${v.available} available</div>
+                                    <div style="width: 100px; font-size: 13px; color: #475569;">${v.on_hand} on hand</div>
+                                    <div style="width: 140px; display: flex; align-items: center; justify-content: flex-end;">
+                                        <span class="status-pill ${status_class}" style="font-size: 11px; padding: 2px 6px;">${status_icon}${v.shopify_status}</span>
+                                        ${v.shopify_id ? `
+                                            <a href="https://${frappe.boot.sysdefaults.shopify_domain || 'shopify.com'}/admin/products/${v.shopify_id}" target="_blank" class="status-action-btn ml-2" title="View in Shopify">
+                                                <i class="fa fa-external-link text-muted" style="font-size: 11px;"></i>
+                                            </a>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        var $variantsRow = $(`
+                            <tr class="variants-container-row">
+                                <td></td>
+                                <td></td>
+                                <td colspan="6" class="bg-light p-3" style="border-radius: 4px;">
+                                    <div class="variant-list-container pl-3" style="border-left: 2px solid #cbd5e1;">
+                                        <div class="text-muted font-weight-bold mb-2" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Product Variants</div>
+                                        ${variantsHtml}
+                                    </div>
+                                </td>
+                            </tr>
+                        `);
+                        $tr.after($variantsRow);
+                    } else {
+                        var $noVariantsRow = $(`
+                            <tr class="variants-container-row">
+                                <td></td>
+                                <td></td>
+                                <td colspan="6" class="py-2 text-muted italic pl-4">No variants found.</td>
+                            </tr>
+                        `);
+                        $tr.after($noVariantsRow);
+                    }
+                }
+            });
+        } else {
+            $icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+            $tr.next('.variants-container-row').hide();
         }
     });
 
@@ -509,177 +605,19 @@ window.render_erpops_orders = function(wrapper) {
 
 window.render_erpops_returns = function(wrapper) {
     if (!wrapper) return;
-
     $(wrapper).find('.layout-main-section').html(`
-		<div class="erpops-inventory-container">
-			<div class="inventory-card">
-				<div class="inventory-card-header">
-					<div class="header-left">
-						<span class="card-title">Order Returns</span>
-						<span class="badge badge-info" id="returns-count">2 returns</span>
-					</div>
-					<div class="header-right">
-						<button class="btn btn-default btn-sm btn-refresh-returns"><i class="fa fa-refresh"></i></button>
-						<button class="btn btn-default btn-sm"><i class="fa fa-download"></i> Export</button>
-					</div>
-				</div>
-
-				<div class="inventory-table-responsive">
-					<table class="table erpops-custom-table">
-						<thead>
-							<tr>
-								<th>RETURN ID</th>
-								<th>ORDER ID</th>
-								<th>PRODUCT</th>
-								<th>REFUND AMOUNT</th>
-								<th>REASON</th>
-								<th>STATUS</th>
-							</tr>
-						</thead>
-						<tbody id="returns-table-body">
-							<!-- Dynamically populated -->
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</div>
+        <div class="erpops-inventory-container text-center py-5">
+            <p class="text-muted" style="font-size: 14px; margin-top: 24px;">No returns data available.</p>
+        </div>
     `);
-
-    var returns = [
-        { id: "RET-1001", order_id: "ORD-1004", product: "Alaiy Premium Hoodie", amount: "₹120.00", reason: "Size too large", status: "Approved" },
-        { id: "RET-1002", order_id: "ORD-0995", product: "Alaiy Tee Cream", amount: "₹45.00", reason: "Fabric defect", status: "Pending" }
-    ];
-
-    var render_returns = function() {
-        var tbody = $(wrapper).find('#returns-table-body');
-        tbody.empty();
-        $(wrapper).find('#returns-count').text(`${returns.length} returns`);
-
-        returns.forEach(function(r) {
-            var status_class = r.status === 'Approved' ? 'pill-paid' : 'pill-processing';
-            tbody.append(`
-				<tr>
-					<td><b>${r.id}</b></td>
-					<td><a href="#Form/Sales Order/${r.order_id}"><b>${r.order_id}</b></a></td>
-					<td>${r.product}</td>
-					<td><b>${r.amount}</b></td>
-					<td class="text-muted">${r.reason}</td>
-					<td><span class="status-pill ${status_class}">${r.status}</span></td>
-				</tr>
-            `);
-        });
-    };
-
-    $(wrapper).find('.btn-refresh-returns').on('click', render_returns);
-    render_returns();
 };
 
 window.render_erpops_analytics = function(wrapper) {
     if (!wrapper) return;
-
     $(wrapper).find('.layout-main-section').html(`
-		<div class="erpops-inventory-container">
-			<!-- KPI Cards -->
-			<div class="analytics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px;">
-				<div class="analytics-card" style="background: #ffffff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-					<div class="card-metric-label" style="font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">Sales Today</div>
-					<div class="card-metric-value" style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">₹1,245.00</div>
-					<div class="card-metric-trend trend-up" style="font-size: 12px; color: #10b981; font-weight: 600;"><i class="fa fa-arrow-up"></i> +12.4% vs yesterday</div>
-				</div>
-				<div class="analytics-card" style="background: #ffffff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-					<div class="card-metric-label" style="font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">Total Orders</div>
-					<div class="card-metric-value" style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">14</div>
-					<div class="card-metric-trend trend-up" style="font-size: 12px; color: #10b981; font-weight: 600;"><i class="fa fa-arrow-up"></i> +8.3% vs last week</div>
-				</div>
-				<div class="analytics-card" style="background: #ffffff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-					<div class="card-metric-label" style="font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">Return Rate</div>
-					<div class="card-metric-value" style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">2.1%</div>
-					<div class="card-metric-trend trend-down" style="font-size: 12px; color: #f59e0b; font-weight: 600;"><i class="fa fa-arrow-down"></i> -0.4% this month</div>
-				</div>
-				<div class="analytics-card" style="background: #ffffff; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-					<div class="card-metric-label" style="font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 500;">Avg Order Value</div>
-					<div class="card-metric-value" style="font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">₹88.92</div>
-					<div class="card-metric-trend trend-up" style="font-size: 12px; color: #10b981; font-weight: 600;"><i class="fa fa-arrow-up"></i> +4.1% overall</div>
-				</div>
-			</div>
-
-			<!-- Visual analytics graphs & progress bars -->
-			<div class="row">
-				<div class="col-md-6">
-					<div class="inventory-card">
-						<div class="inventory-card-header">
-							<span class="card-title">Sales By Channel</span>
-						</div>
-						<div style="padding: 24px;">
-							<div class="progress-list-item" style="margin-bottom: 16px;">
-								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
-									<span>Shopify Store</span>
-									<span><b>₹845.00 (68%)</b></span>
-								</div>
-								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-									<div class="progress-bar-fill" style="width: 68%; background-color: #3b82f6; height: 100%; border-radius: 4px;"></div>
-								</div>
-							</div>
-							<div class="progress-list-item" style="margin-bottom: 16px;">
-								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
-									<span>Wholesale / B2B</span>
-									<span><b>₹300.00 (24%)</b></span>
-								</div>
-								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-									<div class="progress-bar-fill" style="width: 24%; background-color: #10b981; height: 100%; border-radius: 4px;"></div>
-								</div>
-							</div>
-							<div class="progress-list-item">
-								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
-									<span>Retail / POS</span>
-									<span><b>₹100.00 (8%)</b></span>
-								</div>
-								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-									<div class="progress-bar-fill" style="width: 8%; background-color: #f59e0b; height: 100%; border-radius: 4px;"></div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				
-				<div class="col-md-6">
-					<div class="inventory-card">
-						<div class="inventory-card-header">
-							<span class="card-title">Common Return Reasons</span>
-						</div>
-						<div style="padding: 24px;">
-							<div class="progress-list-item" style="margin-bottom: 16px;">
-								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
-									<span>Size Too Large / Small</span>
-									<span><b>62%</b></span>
-								</div>
-								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-									<div class="progress-bar-fill" style="width: 62%; background-color: #ec4899; height: 100%; border-radius: 4px;"></div>
-								</div>
-							</div>
-							<div class="progress-list-item" style="margin-bottom: 16px;">
-								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
-									<span>Incorrect Item Shipped</span>
-									<span><b>23%</b></span>
-								</div>
-								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-									<div class="progress-bar-fill" style="width: 23%; background-color: #8b5cf6; height: 100%; border-radius: 4px;"></div>
-								</div>
-							</div>
-							<div class="progress-list-item">
-								<div class="progress-list-label" style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
-									<span>Fabric Defect / Damaged</span>
-									<span><b>15%</b></span>
-								</div>
-								<div class="progress-bar-bg" style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-									<div class="progress-bar-fill" style="width: 15%; background-color: #64748b; height: 100%; border-radius: 4px;"></div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
+        <div class="erpops-inventory-container text-center py-5">
+            <p class="text-muted" style="font-size: 14px; margin-top: 24px;">No analytics data available.</p>
+        </div>
     `);
 };
 
