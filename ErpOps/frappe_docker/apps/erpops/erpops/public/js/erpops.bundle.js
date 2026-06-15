@@ -5,7 +5,7 @@ window.render_erpops_inventory = function(wrapper) {
     
     // Render custom template structure inside workspace's main section
     $(wrapper).find('.layout-main-section').html(`
-		<div class="erpops-inventory-container">
+		<div class="erpops-inventory-container erpops-inventory-view">
 			<div class="inventory-header-desc">
 				<p class="text-muted">Full product catalogue — every SKU across all suppliers and channels.</p>
 			</div>
@@ -306,7 +306,7 @@ window.render_erpops_orders = function(wrapper) {
 
     // Render layout with only the Sales Orders list
     $(wrapper).find('.layout-main-section').html(`
-		<div class="erpops-inventory-container">
+		<div class="erpops-inventory-container erpops-orders-view">
 			<div class="inventory-card">
 				<div class="inventory-card-header">
 					<div class="header-left">
@@ -429,7 +429,7 @@ window.render_erpops_orders = function(wrapper) {
 window.render_erpops_returns = function(wrapper) {
     if (!wrapper) return;
     $(wrapper).find('.layout-main-section').html(`
-        <div class="erpops-inventory-container text-center py-5">
+        <div class="erpops-inventory-container erpops-returns-view text-center py-5">
             <p class="text-muted" style="font-size: 14px; margin-top: 24px;">No returns data available.</p>
         </div>
     `);
@@ -438,7 +438,7 @@ window.render_erpops_returns = function(wrapper) {
 window.render_erpops_analytics = function(wrapper) {
     if (!wrapper) return;
     $(wrapper).find('.layout-main-section').html(`
-        <div class="erpops-inventory-container text-center py-5">
+        <div class="erpops-inventory-container erpops-analytics-view text-center py-5">
             <p class="text-muted" style="font-size: 14px; margin-top: 24px;">No analytics data available.</p>
         </div>
     `);
@@ -449,7 +449,7 @@ window.render_erpops_channels = function(wrapper) {
 
     // Render structure
     $(wrapper).find('.layout-main-section').html(`
-		<div class="erpops-inventory-container">
+		<div class="erpops-inventory-container erpops-channels-details-view">
 			<div class="inventory-header-desc">
 				<p class="text-muted">Configure and sync your external e-commerce sales channels.</p>
 			</div>
@@ -562,7 +562,7 @@ window.render_erpops_channels_overview = function(wrapper) {
     if (!wrapper) return;
 
     $(wrapper).find('.layout-main-section').html(`
-		<div class="erpops-inventory-container">
+		<div class="erpops-inventory-container erpops-channels-overview-view">
 			<div class="inventory-header-desc">
 				<p class="text-muted">Manage your external e-commerce integrations and sales channels.</p>
 			</div>
@@ -640,7 +640,7 @@ $(document).ready(function() {
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(window.erpops_route_interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
-                        if ($(wrapper).find('.erpops-inventory-container').length === 0) {
+                        if ($(wrapper).find('.erpops-inventory-view').length === 0) {
                             console.log("Injecting custom Product Catalogue into Workspace layout...");
                             frappe.require("/assets/erpops/css/inventory_page.css", function() {
                                 window.render_erpops_inventory(wrapper);
@@ -664,7 +664,7 @@ $(document).ready(function() {
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(window.erpops_route_interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
-                        if ($(wrapper).find('.erpops-tabs-header').length === 0) {
+                        if ($(wrapper).find('.erpops-orders-view').length === 0) {
                             console.log("Injecting custom Orders & Returns panel into Workspace layout...");
                             frappe.require("/assets/erpops/css/inventory_page.css", function() {
                                 window.render_erpops_orders(wrapper);
@@ -687,7 +687,7 @@ $(document).ready(function() {
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(window.erpops_route_interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
-                        if ($(wrapper).find('#shopify-overview-status').length === 0) {
+                        if ($(wrapper).find('.erpops-channels-overview-view').length === 0) {
                             console.log("Injecting custom Channels panel into Workspace layout...");
                             frappe.require("/assets/erpops/css/inventory_page.css", function() {
                                 window.render_erpops_channels_overview(wrapper);
@@ -710,7 +710,7 @@ $(document).ready(function() {
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(window.erpops_route_interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
-                        if ($(wrapper).find('#shopify-toggle-enable').length === 0) {
+                        if ($(wrapper).find('.erpops-channels-details-view').length === 0) {
                             console.log("Injecting custom Shopify details panel into Workspace layout...");
                             frappe.require("/assets/erpops/css/inventory_page.css", function() {
                                 window.render_erpops_channels(wrapper);
@@ -733,7 +733,7 @@ $(document).ready(function() {
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(window.erpops_route_interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
-                        if ($(wrapper).find('#returns-table-body').length === 0) {
+                        if ($(wrapper).find('.erpops-returns-view').length === 0) {
                             console.log("Injecting custom Returns panel into Workspace layout...");
                             frappe.require("/assets/erpops/css/inventory_page.css", function() {
                                 window.render_erpops_returns(wrapper);
@@ -756,7 +756,7 @@ $(document).ready(function() {
                     if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
                         clearInterval(window.erpops_route_interval);
                         console.log("[Alaiy OS Router] Found main layout section!");
-                        if ($(wrapper).find('.analytics-grid').length === 0) {
+                        if ($(wrapper).find('.erpops-analytics-view').length === 0) {
                             console.log("Injecting custom Analytics panel into Workspace layout...");
                             frappe.require("/assets/erpops/css/inventory_page.css", function() {
                                 window.render_erpops_analytics(wrapper);
