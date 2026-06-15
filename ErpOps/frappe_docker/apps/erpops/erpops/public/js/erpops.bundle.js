@@ -440,80 +440,54 @@ window.render_erpops_orders = function(wrapper) {
     render_returns();
 };
 
-window.render_custom_sidebar = function() {
-    var sidebar = $('.desk-sidebar');
-    if (sidebar.length && $('.custom-alaiy-sidebar').length === 0) {
-        sidebar.html(`
-			<div class="custom-alaiy-sidebar">
-				<div class="sidebar-header">
-					<div class="brand-container">
-						<span>alaiy <span class="brand-os">OS</span></span>
-					</div>
-					<div class="sidebar-toggle-btn">
-						<i class="fa fa-columns"></i>
-					</div>
-				</div>
+window.append_channels_to_sidebar = function() {
+    var sidebar_items = $('.desk-sidebar .sidebar-items');
+    if (sidebar_items.length && $('.sidebar-section-channels').length === 0) {
+        sidebar_items.append(`
+			<div class="sidebar-section-channels" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+				<div class="sidebar-section-title" style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; padding: 0 15px;">CHANNELS</div>
 				
-				<div class="sidebar-section">
-					<div class="sidebar-section-title">AI</div>
-					<a class="sidebar-item" href="#erpops_dashboard" id="sidebar-ask-alaiy">
-						<i class="fa fa-magic"></i>
-						<span>Ask Alaiy</span>
-						<i class="fa fa-chevron-down fold-icon"></i>
-					</a>
-					<a class="sidebar-item" href="#erpops_dashboard" id="sidebar-dashboard">
-						<i class="fa fa-th-large"></i>
-						<span>Dashboard</span>
-					</a>
-					<a class="sidebar-item" href="#erpops_dashboard" id="sidebar-pinned">
-						<i class="fa fa-bookmark-o"></i>
-						<span>My Pinned</span>
-					</a>
-				</div>
-
-				<div class="sidebar-section">
-					<div class="sidebar-section-title">VIEWS</div>
-					<a class="sidebar-item" href="#Workspaces/Inventory" id="sidebar-inventory">
-						<i class="fa fa-cubes"></i>
-						<span>Inventory</span>
-					</a>
-					<a class="sidebar-item" href="#Workspaces/Orders" id="sidebar-orders">
-						<i class="fa fa-shopping-bag"></i>
-						<span>Orders</span>
-					</a>
-					<a class="sidebar-item" href="#returns" id="sidebar-returns">
-						<i class="fa fa-undo"></i>
-						<span>Returns</span>
-					</a>
-					<a class="sidebar-item" href="#analytics" id="sidebar-analytics">
-						<i class="fa fa-bar-chart"></i>
-						<span>Analytics</span>
-					</a>
-				</div>
-
-				<div class="sidebar-section">
-					<div class="sidebar-section-title">CHANNELS</div>
-					
-					<div class="channel-item">
-						<div class="channel-info" id="channel-shopify-btn">
-							<div class="channel-icon-wrapper">
-								<i class="fa fa-shopping-cart"></i>
-							</div>
-							<div class="channel-details">
-								<span class="channel-name">Shopify <i class="fa fa-check-circle text-success" style="font-size:10px;"></i></span>
-								<span class="channel-sync">synced 2m ago</span>
-							</div>
+				<div class="channel-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; border-radius: 8px; margin: 0 10px;">
+					<div class="channel-info" id="channel-shopify-btn" style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex-grow: 1;">
+						<div class="channel-icon-wrapper" style="width: 28px; height: 28px; background-color: var(--fg-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color);">
+							<i class="fa fa-shopping-cart" style="color: var(--text-color); font-size: 13px;"></i>
 						</div>
-						<label class="switch-container">
-							<input type="checkbox" checked id="toggle-shopify">
-							<span class="switch-slider"></span>
-						</label>
+						<div class="channel-details" style="display: flex; flex-direction: column;">
+							<span class="channel-name" style="font-size: 13px; font-weight: 500; color: var(--text-color);">Shopify <i class="fa fa-check-circle text-success" style="font-size:10px;"></i></span>
+							<span class="channel-sync" style="font-size: 10px; color: var(--text-muted);">synced 2m ago</span>
+						</div>
 					</div>
+					<label class="switch-container" style="position: relative; display: inline-block; width: 18px; height: 18px; cursor: pointer; margin-bottom: 0;">
+						<input type="checkbox" checked id="toggle-shopify" style="opacity: 0; width: 0; height: 0;">
+						<span class="switch-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border-color); transition: .2s; border-radius: 50%;"></span>
+					</label>
 				</div>
 			</div>
         `);
 
-        // Channel toggle listeners
+        // Style the round checkbox toggler
+        var style = document.createElement('style');
+        style.innerHTML = `
+            .switch-container input:checked + .switch-slider {
+                background-color: #3b82f6 !important;
+                border-color: #3b82f6 !important;
+            }
+            .switch-container input:checked + .switch-slider:after {
+                content: "\\f00c";
+                font-family: FontAwesome;
+                color: white;
+                font-size: 9px;
+                position: absolute;
+                top: 4px;
+                left: 4px;
+            }
+            .channel-item:hover {
+                background-color: var(--bg-color);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Bind events
         $('#toggle-shopify').on('change', function() {
             var active = $(this).prop('checked');
             frappe.show_alert({
@@ -522,23 +496,9 @@ window.render_custom_sidebar = function() {
             });
         });
 
-        // Redirect Shopify channel name click to settings form
         $('#channel-shopify-btn').on('click', function() {
             frappe.set_route('Form', 'Shopify Settings');
         });
-    }
-
-    // Highlight active sidebar item
-    var route = frappe.get_route_str() || "";
-    var route_lower = route.toLowerCase();
-    
-    $('.custom-alaiy-sidebar .sidebar-item').removeClass('active');
-    if (route_lower.indexOf('inventory') !== -1) {
-        $('#sidebar-inventory').addClass('active');
-    } else if (route_lower.indexOf('orders') !== -1) {
-        $('#sidebar-orders').addClass('active');
-    } else if (route_lower.indexOf('dashboard') !== -1) {
-        $('#sidebar-dashboard').addClass('active');
     }
 };
 
@@ -546,45 +506,59 @@ $(document).ready(function() {
     console.log("Alaiy OS Global Router loaded.");
     
     var check_and_render = function() {
-        // Render custom sidebar first
+        // Append Channels to native sidebar
         if (typeof frappe !== 'undefined') {
-            window.render_custom_sidebar();
+            window.append_channels_to_sidebar();
         }
 
         if (typeof frappe !== 'undefined' && typeof frappe.get_route_str === 'function') {
             var route = frappe.get_route_str() || "";
             var route_lower = route.toLowerCase();
             
+            var max_attempts = 20;
+            var attempts = 0;
+
             if (route_lower === 'workspaces/inventory' || 
                 route_lower === 'workspace/inventory' || 
                 route_lower === 'inventory') {
                 
-                var wrapper = frappe.container.page.wrapper;
-                if (wrapper && $(wrapper).find('.erpops-inventory-container').length === 0) {
-                    console.log("Injecting custom Product Catalogue into Workspace layout...");
-                    window.render_erpops_inventory(wrapper);
-                }
+                var interval = setInterval(function() {
+                    var wrapper = frappe.container.page && frappe.container.page.wrapper;
+                    if (wrapper) {
+                        var main_section = $(wrapper).find('.layout-main-section');
+                        if (main_section.length && (main_section.find('.standard-dashboard-section').length || main_section.children().length > 0)) {
+                            clearInterval(interval);
+                            if (main_section.find('.erpops-inventory-container').length === 0) {
+                                console.log("Injecting custom Product Catalogue into Workspace...");
+                                window.render_erpops_inventory(wrapper);
+                            }
+                            return;
+                        }
+                    }
+                    attempts++;
+                    if (attempts >= max_attempts) clearInterval(interval);
+                }, 100);
+
             } else if (route_lower === 'workspaces/orders' || 
                        route_lower === 'workspace/orders' || 
                        route_lower === 'orders') {
                 
-                var wrapper = frappe.container.page.wrapper;
-                if (wrapper && $(wrapper).find('.erpops-tabs-header').length === 0) {
-                    console.log("Injecting custom Orders & Returns panel into Workspace layout...");
-                    window.render_erpops_orders(wrapper);
-                }
-            } else if (route_lower === 'returns') {
-                // Route to Orders workspace and open Returns tab
-                frappe.set_route('Workspaces/Orders');
-                setTimeout(function() {
-                    $('.erpops-tab-btn[data-tab="returns"]').click();
-                }, 400);
-            } else if (route_lower === 'analytics') {
-                // Route to Orders workspace and open Analytics tab
-                frappe.set_route('Workspaces/Orders');
-                setTimeout(function() {
-                    $('.erpops-tab-btn[data-tab="analytics"]').click();
-                }, 400);
+                var interval = setInterval(function() {
+                    var wrapper = frappe.container.page && frappe.container.page.wrapper;
+                    if (wrapper) {
+                        var main_section = $(wrapper).find('.layout-main-section');
+                        if (main_section.length && (main_section.find('.standard-dashboard-section').length || main_section.children().length > 0)) {
+                            clearInterval(interval);
+                            if (main_section.find('.erpops-tabs-header').length === 0) {
+                                console.log("Injecting custom Orders panel into Workspace...");
+                                window.render_erpops_orders(wrapper);
+                            }
+                            return;
+                        }
+                    }
+                    attempts++;
+                    if (attempts >= max_attempts) clearInterval(interval);
+                }, 100);
             }
         }
     };
