@@ -209,11 +209,12 @@ def setup_shopify_integration():
     import urllib.parse
     import json
     
-    client_id = os.environ.get("SHOPIFY_CLIENT_ID")
-    client_secret = os.environ.get("SHOPIFY_CLIENT_SECRET")
-    shop = os.environ.get("SHOPIFY_SHOP") or "ddfhhg-ae.myshopify.com"
+    client_id = os.environ.get("SHOPIFY_CLIENT_ID") or getattr(frappe.conf, "shopify_client_id", None)
+    client_secret = os.environ.get("SHOPIFY_CLIENT_SECRET") or getattr(frappe.conf, "shopify_client_secret", None)
+    shop = os.environ.get("SHOPIFY_SHOP") or getattr(frappe.conf, "shopify_domain", "ddfhhg-ae.myshopify.com")
     
     if not client_id or not client_secret:
+        print("Automatic Shopify setup: Missing client_id or client_secret.")
         return
         
     # Clean shop domain
