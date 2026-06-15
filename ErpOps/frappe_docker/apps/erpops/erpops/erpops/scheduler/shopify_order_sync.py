@@ -2,17 +2,14 @@ import frappe
 
 
 def get_customer_group():
-    # Check Shopify Setting safely
     group = None
     try:
         if frappe.get_meta("Shopify Setting").has_field("customer_group"):
             group = frappe.db.get_single_value("Shopify Setting", "customer_group")
     except Exception:
         pass
-        
     if group and frappe.db.exists("Customer Group", {"name": group, "is_group": 0}):
         return group
-    # Check Selling Settings default safely
     group = None
     try:
         if frappe.get_meta("Selling Settings").has_field("customer_group"):
@@ -21,15 +18,12 @@ def get_customer_group():
         pass
     if group and frappe.db.exists("Customer Group", {"name": group, "is_group": 0}):
         return group
-    # Fallback to standard non-group Customer Group
-    fallback = None
     try:
         fallback = frappe.db.get_value("Customer Group", {"is_group": 0}, "name")
+        if fallback:
+            return fallback
     except Exception:
         pass
-    if fallback:
-        return fallback
-    # Final fallback to first available Customer Group
     try:
         return frappe.db.get_value("Customer Group", {}, "name")
     except Exception:
@@ -37,17 +31,14 @@ def get_customer_group():
 
 
 def get_item_group():
-    # Check Shopify Setting safely
     group = None
     try:
         if frappe.get_meta("Shopify Setting").has_field("item_group"):
             group = frappe.db.get_single_value("Shopify Setting", "item_group")
     except Exception:
         pass
-        
     if group and frappe.db.exists("Item Group", {"name": group, "is_group": 0}):
         return group
-    # Check Stock Settings default safely
     group = None
     try:
         if frappe.get_meta("Stock Settings").has_field("default_item_group"):
@@ -56,15 +47,12 @@ def get_item_group():
         pass
     if group and frappe.db.exists("Item Group", {"name": group, "is_group": 0}):
         return group
-    # Fallback to standard non-group Item Group
-    fallback = None
     try:
         fallback = frappe.db.get_value("Item Group", {"is_group": 0}, "name")
+        if fallback:
+            return fallback
     except Exception:
         pass
-    if fallback:
-        return fallback
-    # Final fallback to first available Item Group
     try:
         return frappe.db.get_value("Item Group", {}, "name")
     except Exception:
@@ -72,19 +60,14 @@ def get_item_group():
 
 
 def sync_shopify_orders():
-    """Every 5 min: poll Shopify for new orders and create Sales Orders in ERPNext."""
     try:
-        # Also sync products to ensure mappings and catalog are fresh
         sync_shopify_products()
-
         from erpops.erpops.shopify.shopify_client import ShopifyClient
         shopify = ShopifyClient()
 
-        # Check if user requested syncing old orders from UI safely
         sync_old = 0
         from_date = None
         to_date = None
-
         try:
             meta = frappe.get_meta("Shopify Setting")
             if meta.has_field("custom_sync_old_orders"):
@@ -98,7 +81,6 @@ def sync_shopify_orders():
 
         if sync_old and from_date:
             orders = shopify.get_orders(since=from_date, to_date=to_date)
-            # Reset the checkbox in the database so it only runs once
             try:
                 frappe.db.set_single_value("Shopify Setting", "custom_sync_old_orders", 0)
                 frappe.db.commit()
@@ -126,9 +108,7 @@ def sync_shopify_orders():
                     frappe.log_error(f"Failed to sync Shopify Order {order.get('name')}: {ord_err}", "Shopify Order Sync")
 
         try:
-            frappe.db.set_single_value(
-                "Shopify Setting", "last_inventory_sync", frappe.utils.now_datetime()
-            )
+            frappe.db.set_single_value("Shopify Setting", "last_inventory_sync", frappe.utils.now_datetime())
             frappe.db.commit()
         except Exception:
             pass
@@ -141,12 +121,9 @@ def sync_shopify_orders():
 
 
 def sync_shopify_products():
-    """Poll Shopify for products and create/map them in ERPNext."""
     try:
         from erpops.erpops.shopify.shopify_client import ShopifyClient
         shopify = ShopifyClient()
-
-        # Fetch up to 100 products from Shopify
         products = shopify.get_products(limit=100)
 
         for p in products:
@@ -156,8 +133,6 @@ def sync_shopify_products():
             for v in p.get("variants", {}).get("nodes", []):
                 variant_id = v.get("id", "")
                 sku = v.get("sku")
-                
-                # If SKU is empty, generate a fallback SKU based on Variant ID
                 clean_variant_id = variant_id.split("/")[-1] if "/" in variant_id else variant_id
                 if not sku:
                     sku = f"SPY-{clean_variant_id}"
@@ -167,13 +142,12 @@ def sync_shopify_products():
                 if variant_title and variant_title != "Default Title":
                     item_name = f"{title} - {variant_title}"
 
-                # 1. Ensure Item exists in ERPNext
                 if not frappe.db.exists("Item", sku):
                     item = frappe.new_doc("Item")
                     item.item_code = sku
                     item.item_name = item_name
                     item.item_group = get_item_group()
-                    brand_name = vendor or "Generic"
+                    brand_name = vendor or None
                     if brand_name and not frappe.db.exists("Brand", brand_name):
                         try:
                             b = frappe.new_doc("Brand")
@@ -188,7 +162,6 @@ def sync_shopify_products():
                     item.flags.ignore_mandatory = True
                     item.insert(ignore_permissions=True)
 
-                # 2. Ensure Ecommerce Item mapping exists safely
                 if clean_variant_id:
                     existing_mapping = frappe.db.get_value(
                         "Ecommerce Item",
@@ -199,12 +172,7 @@ def sync_shopify_products():
                     if existing_mapping:
                         if existing_mapping.erpnext_item_code != sku:
                             try:
-                                frappe.db.set_value(
-                                    "Ecommerce Item",
-                                    existing_mapping.name,
-                                    "erpnext_item_code",
-                                    sku
-                                )
+                                frappe.db.set_value("Ecommerce Item", existing_mapping.name, "erpnext_item_code", sku)
                                 frappe.db.commit()
                             except Exception as upd_err:
                                 frappe.logger().warn(f"Failed to update Ecommerce Item mapping: {upd_err}")
@@ -224,9 +192,7 @@ def sync_shopify_products():
 
 
 def _create_sales_order_from_shopify(order):
-    """Create an ERPNext Sales Order from a Shopify GraphQL order dict."""
     customer_name = order.get("customer", {}).get("displayName", "Shopify Customer")
-
     customer = frappe.db.get_value("Customer", {"customer_name": customer_name})
     if not customer:
         c = frappe.new_doc("Customer")
@@ -238,27 +204,22 @@ def _create_sales_order_from_shopify(order):
         customer = c.name
 
     so = frappe.new_doc("Sales Order")
-    
-    # Resolve company
     company = frappe.db.get_single_value("Global Defaults", "default_company")
     if not company:
         companies = frappe.get_all("Company", limit=1)
         company = companies[0].name if companies else "Gain and Shine"
     so.company = company
 
-    # Resolve currency
     currency = order.get("totalPriceSet", {}).get("shopMoney", {}).get("currencyCode")
     if not currency:
         currency = frappe.db.get_value("Company", company, "default_currency") or "INR"
     so.currency = currency
 
-    # Resolve selling price list
     price_list = frappe.db.get_value("Price List", {"selling": 1, "enabled": 1}, "name")
     if not price_list:
         price_list = frappe.db.get_value("Price List", {"selling": 1}, "name") or "Standard Selling"
     so.selling_price_list = price_list
     so.price_list_currency = currency
-
     so.customer = customer
     so.transaction_date = frappe.utils.today()
     so.delivery_date = frappe.utils.add_days(frappe.utils.today(), 3)
@@ -271,17 +232,13 @@ def _create_sales_order_from_shopify(order):
         raw_shopify_id = variant_id or product_id or ""
         clean_shopify_id = raw_shopify_id.split("/")[-1] if "/" in raw_shopify_id else raw_shopify_id
 
-        # Try to resolve ERPNext item code using mapping, SKU, or fallback ID
         item_code = None
         if clean_shopify_id:
             item_code = frappe.db.get_value("Ecommerce Item", {"integration_item_code": clean_shopify_id, "integration": "Shopify"}, "erpnext_item_code")
-
         if not item_code:
             item_code = line.get("sku")
-
         if not item_code and clean_shopify_id:
             item_code = f"SPY-{clean_shopify_id}"
-
         if not item_code:
             item_code = line.get("title", "UNKNOWN")
 
@@ -305,12 +262,7 @@ def _create_sales_order_from_shopify(order):
             if existing_mapping:
                 if existing_mapping.erpnext_item_code != item_code:
                     try:
-                        frappe.db.set_value(
-                            "Ecommerce Item",
-                            existing_mapping.name,
-                            "erpnext_item_code",
-                            item_code
-                        )
+                        frappe.db.set_value("Ecommerce Item", existing_mapping.name, "erpnext_item_code", item_code)
                         frappe.db.commit()
                     except Exception as upd_err:
                         frappe.log_error(f"Failed to update Ecommerce Item mapping: {upd_err}", "Shopify Sync")
@@ -327,9 +279,7 @@ def _create_sales_order_from_shopify(order):
         so.append("items", {
             "item_code": item_code,
             "qty": float(line.get("quantity", 1)),
-            "rate": float(
-                line.get("originalUnitPriceSet", {}).get("shopMoney", {}).get("amount", 0)
-            ),
+            "rate": float(line.get("originalUnitPriceSet", {}).get("shopMoney", {}).get("amount", 0)),
             "delivery_date": so.delivery_date,
         })
 
