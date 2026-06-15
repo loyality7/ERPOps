@@ -135,7 +135,15 @@ def sync_shopify_products():
                     item.item_code = sku
                     item.item_name = item_name
                     item.item_group = get_item_group()
-                    item.brand = vendor or "Generic"
+                    brand_name = vendor or "Generic"
+                    if brand_name and not frappe.db.exists("Brand", brand_name):
+                        try:
+                            b = frappe.new_doc("Brand")
+                            b.brand_name = brand_name
+                            b.insert(ignore_permissions=True)
+                        except Exception:
+                            brand_name = None
+                    item.brand = brand_name
                     item.is_stock_item = 1
                     item.stock_uom = "Nos"
                     item.flags.ignore_mandatory = True
