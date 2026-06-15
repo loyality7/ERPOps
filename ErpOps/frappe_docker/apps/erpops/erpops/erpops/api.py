@@ -776,17 +776,17 @@ def get_sales_orders():
 def show_errors():
     """Print the last 10 Error Log entries directly to console."""
     try:
-        from erpops.erpops.shopify.shopify_client import ShopifyClient
-        c = ShopifyClient()
-        print('DIAGNOSTIC - Shopify Endpoint:', c.endpoint)
-        print('DIAGNOSTIC - Token length:', len(c.token) if c.token else 0)
-        try:
-            orders = c.get_orders(since='2026-05-15')
-            print('DIAGNOSTIC - Shopify Orders count since May 15:', len(orders))
-        except Exception as api_err:
-            print('DIAGNOSTIC - Shopify API Query failed:', api_err)
-    except Exception as general_err:
-        print('DIAGNOSTIC - General load failed:', general_err)
+        import os
+        app_path = frappe.get_app_path("ecommerce_integrations")
+        path = os.path.join(app_path, "ecommerce_integrations", "doctype", "ecommerce_item", "ecommerce_item.py")
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                print("SOURCE CODE OF ecommerce_item.py:")
+                print(f.read())
+        else:
+            print(f"ecommerce_item.py not found at path: {path}")
+    except Exception as read_err:
+        print("Failed to read ecommerce_item.py:", read_err)
     print("--- Database Error Logs ---")
     logs = frappe.db.get_all("Error Log", fields=["method", "error"], limit=10, order_by="creation desc")
     for d in logs:
