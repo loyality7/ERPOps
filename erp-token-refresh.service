@@ -1,0 +1,12 @@
+[Unit]
+Description=ERPNext Shopify Token Refresher
+After=network.target
+
+[Service]
+User=frappe
+WorkingDirectory=/home/frappe/frappe-bench/
+ExecStart=/home/frappe/frappe-bench/env/bin/python sites/erp-test.gainandshine.com/auto_refresh_token.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

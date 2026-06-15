@@ -1,7 +1,7 @@
 {
  "doctype": "Page",
- "page_name": "inventory",
- "name": "inventory",
+ "page_name": "inventory_page",
+ "name": "inventory_page",
  "title": "Inventory",
  "module": "ErpOps",
  "standard": "Yes"
