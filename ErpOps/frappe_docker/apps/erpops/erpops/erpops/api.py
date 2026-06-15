@@ -775,18 +775,6 @@ def get_sales_orders():
 @frappe.whitelist()
 def show_errors():
     """Print the last 10 Error Log entries directly to console."""
-    try:
-        import os
-        app_path = frappe.get_app_path("ecommerce_integrations")
-        path = os.path.join(app_path, "ecommerce_integrations", "doctype", "ecommerce_item", "ecommerce_item.py")
-        if os.path.exists(path):
-            with open(path, "r") as f:
-                print("SOURCE CODE OF ecommerce_item.py:")
-                print(f.read())
-        else:
-            print(f"ecommerce_item.py not found at path: {path}")
-    except Exception as read_err:
-        print("Failed to read ecommerce_item.py:", read_err)
     print("--- Database Error Logs ---")
     logs = frappe.db.get_all("Error Log", fields=["method", "error"], limit=10, order_by="creation desc")
     for d in logs:

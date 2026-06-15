@@ -149,6 +149,7 @@ def sync_shopify_products():
                         frappe.db.delete("Ecommerce Item", {"erpnext_item_code": sku})
                         if clean_variant_id:
                             frappe.db.delete("Ecommerce Item", {"integration_item_code": clean_variant_id, "integration": "Shopify"})
+                        frappe.db.delete("Ecommerce Item", {"sku": sku, "integration": "Shopify"})
                         frappe.db.commit()
 
                         item = frappe.new_doc("Item")
@@ -263,6 +264,10 @@ def _create_sales_order_from_shopify(order):
             frappe.db.delete("Ecommerce Item", {"erpnext_item_code": item_code})
             if clean_shopify_id:
                 frappe.db.delete("Ecommerce Item", {"integration_item_code": clean_shopify_id, "integration": "Shopify"})
+            frappe.db.delete("Ecommerce Item", {"sku": item_code, "integration": "Shopify"})
+            sku_val = line.get("sku")
+            if sku_val:
+                frappe.db.delete("Ecommerce Item", {"sku": sku_val, "integration": "Shopify"})
             frappe.db.commit()
 
             item = frappe.new_doc("Item")
