@@ -97,16 +97,15 @@ def get_inventory_with_velocity():
     """Returns inventory table with stock, velocity, days cover per SKU per warehouse."""
     bins = frappe.db.sql("""
         SELECT
-            b.item_code,
+            i.name AS item_code,
             i.item_name,
-            b.warehouse,
-            b.actual_qty,
-            b.reserved_qty,
-            (b.actual_qty - b.reserved_qty) AS available_qty
-        FROM `tabBin` b
-        JOIN `tabItem` i ON i.name = b.item_code
-        WHERE b.actual_qty > 0
-        ORDER BY b.item_code
+            COALESCE(b.warehouse, 'No Warehouse') AS warehouse,
+            COALESCE(b.actual_qty, 0) AS actual_qty,
+            COALESCE(b.reserved_qty, 0) AS reserved_qty,
+            COALESCE(b.actual_qty - b.reserved_qty, 0) AS available_qty
+        FROM `tabItem` i
+        LEFT JOIN `tabBin` b ON i.name = b.item_code
+        ORDER BY i.name
     """, as_dict=True)
 
     fourteen_days_ago = frappe.utils.add_days(frappe.utils.today(), -14)
@@ -537,3 +536,66 @@ def get_shopify_connect_url():
         "shop": shop,
         "redirect_uri": redirect_uri,
     }
+
+@frappe.whitelist()
+def get_product_catalogue():
+    """Returns detailed product catalogue for Alaiy OS inventory view."""
+    items = frappe.db.sql("""
+        SELECT
+            i.name AS item_code,
+            i.item_name,
+            i.image,
+            i.brand,
+            i.has_variants,
+            i.variant_of,
+            COALESCE(b.actual_qty, 0) AS actual_qty,
+            COALESCE(b.actual_qty - b.reserved_qty, 0) AS available_qty
+        FROM `tabItem` i
+        LEFT JOIN `tabBin` b ON i.name = b.item_code
+        ORDER BY i.creation DESC
+    """, as_dict=True)
+    
+    # Get all Shopify integrations mapping
+    mappings = frappe.get_all(
+        "Ecommerce Item",
+        fields=["erpnext_item_code", "ecommerce_item_id", "integration"]
+    )
+    
+    mapping_map = {}
+    for m in mappings:
+        if m.integration == "Shopify":
+            mapping_map[m.erpnext_item_code] = m.ecommerce_item_id
+            
+    # Calculate variants count
+    templates = [i.item_code for i in items if i.has_variants]
+    variant_counts = {}
+    if templates:
+        counts = frappe.db.sql("""
+            SELECT variant_of, COUNT(*) as count 
+            FROM `tabItem` 
+            WHERE variant_of IN %s 
+            GROUP BY variant_of
+        """, (templates,), as_dict=True)
+        variant_counts = {c.variant_of: c.count for c in counts}
+        
+    result = []
+    for i in items:
+        var_count = 1
+        if i.has_variants:
+            var_count = variant_counts.get(i.item_code, 0)
+            
+        shopify_id = mapping_map.get(i.item_code)
+        
+        result.append({
+            "item_code": i.item_code,
+            "item_name": i.item_name,
+            "image": i.image or "/assets/erpops/images/logo.png",
+            "brand": i.brand or "Generic",
+            "variants": f"{var_count} variant" if var_count == 1 else f"{var_count} variants",
+            "available": int(i.available_qty),
+            "on_hand": int(i.actual_qty),
+            "shopify_status": "Synced" if shopify_id else "Not synced",
+            "shopify_id": shopify_id
+        })
+        
+    return result
