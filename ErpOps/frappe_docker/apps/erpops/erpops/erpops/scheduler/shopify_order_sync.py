@@ -164,42 +164,33 @@ def sync_shopify_products():
                         item.insert(ignore_permissions=True)
 
                     if clean_variant_id:
-                        existing_by_variant = frappe.db.get_value(
+                        existing_mapping = frappe.db.get_value(
                             "Ecommerce Item",
                             {"integration_item_code": clean_variant_id, "integration": "Shopify"},
                             ["name", "erpnext_item_code"],
                             as_dict=True
                         )
-                        existing_by_sku = frappe.db.get_value(
-                            "Ecommerce Item",
-                            {"erpnext_item_code": sku, "integration": "Shopify"},
-                            ["name", "integration_item_code"],
-                            as_dict=True
-                        )
-
-                        if existing_by_variant:
-                            if existing_by_variant.erpnext_item_code != sku:
+                        if existing_mapping:
+                            if existing_mapping.erpnext_item_code != sku:
                                 try:
-                                    frappe.db.set_value("Ecommerce Item", existing_by_variant.name, "erpnext_item_code", sku)
+                                    frappe.db.set_value("Ecommerce Item", existing_mapping.name, "erpnext_item_code", sku)
                                     frappe.db.commit()
                                 except Exception as upd_err:
                                     frappe.logger().warn(f"Failed to update Ecommerce Item mapping: {upd_err}")
-                        elif existing_by_sku:
-                            if existing_by_sku.integration_item_code != clean_variant_id:
-                                try:
-                                    frappe.db.set_value("Ecommerce Item", existing_by_sku.name, "integration_item_code", clean_variant_id)
-                                    frappe.db.commit()
-                                except Exception as upd_err:
-                                    frappe.logger().warn(f"Failed to update Ecommerce Item mapping by SKU: {upd_err}")
                         else:
-                            try:
-                                eco = frappe.new_doc("Ecommerce Item")
-                                eco.erpnext_item_code = sku
-                                eco.integration_item_code = clean_variant_id
-                                eco.integration = "Shopify"
-                                eco.insert(ignore_permissions=True, ignore_if_duplicate=True)
-                            except Exception as eco_err:
-                                frappe.logger().warn(f"Failed to create Ecommerce Item mapping: {eco_err}")
+                            already = frappe.db.exists("Ecommerce Item", {
+                                "erpnext_item_code": sku,
+                                "integration": "Shopify"
+                            })
+                            if not already:
+                                try:
+                                    eco = frappe.new_doc("Ecommerce Item")
+                                    eco.erpnext_item_code = sku
+                                    eco.integration_item_code = clean_variant_id
+                                    eco.integration = "Shopify"
+                                    eco.insert(ignore_permissions=True)
+                                except Exception as eco_err:
+                                    frappe.logger().warn(f"Failed to create Ecommerce Item mapping: {eco_err}")
                 except Exception as var_err:
                     frappe.log_error(title="Shopify Product Sync", message=f"Failed to sync variant {v.get('id')}: {var_err}")
 
@@ -270,42 +261,33 @@ def _create_sales_order_from_shopify(order):
             item.insert(ignore_permissions=True)
 
         if clean_shopify_id:
-            existing_by_variant = frappe.db.get_value(
+            existing_mapping = frappe.db.get_value(
                 "Ecommerce Item",
                 {"integration_item_code": clean_shopify_id, "integration": "Shopify"},
                 ["name", "erpnext_item_code"],
                 as_dict=True
             )
-            existing_by_sku = frappe.db.get_value(
-                "Ecommerce Item",
-                {"erpnext_item_code": item_code, "integration": "Shopify"},
-                ["name", "integration_item_code"],
-                as_dict=True
-            )
-
-            if existing_by_variant:
-                if existing_by_variant.erpnext_item_code != item_code:
+            if existing_mapping:
+                if existing_mapping.erpnext_item_code != item_code:
                     try:
-                        frappe.db.set_value("Ecommerce Item", existing_by_variant.name, "erpnext_item_code", item_code)
+                        frappe.db.set_value("Ecommerce Item", existing_mapping.name, "erpnext_item_code", item_code)
                         frappe.db.commit()
                     except Exception as upd_err:
                         frappe.log_error(title="Shopify Sync", message=f"Failed to update Ecommerce Item mapping: {upd_err}")
-            elif existing_by_sku:
-                if existing_by_sku.integration_item_code != clean_shopify_id:
-                    try:
-                        frappe.db.set_value("Ecommerce Item", existing_by_sku.name, "integration_item_code", clean_shopify_id)
-                        frappe.db.commit()
-                    except Exception as upd_err:
-                        frappe.log_error(title="Shopify Sync", message=f"Failed to update Ecommerce Item mapping by SKU: {upd_err}")
             else:
-                try:
-                    eco = frappe.new_doc("Ecommerce Item")
-                    eco.erpnext_item_code = item_code
-                    eco.integration_item_code = clean_shopify_id
-                    eco.integration = "Shopify"
-                    eco.insert(ignore_permissions=True, ignore_if_duplicate=True)
-                except Exception as ex:
-                    frappe.log_error(title="Shopify Sync", message=f"Failed to auto-create Ecommerce Item mapping during order sync: {ex}")
+                already = frappe.db.exists("Ecommerce Item", {
+                    "erpnext_item_code": item_code,
+                    "integration": "Shopify"
+                })
+                if not already:
+                    try:
+                        eco = frappe.new_doc("Ecommerce Item")
+                        eco.erpnext_item_code = item_code
+                        eco.integration_item_code = clean_shopify_id
+                        eco.integration = "Shopify"
+                        eco.insert(ignore_permissions=True)
+                    except Exception as ex:
+                        frappe.log_error(title="Shopify Sync", message=f"Failed to auto-create Ecommerce Item mapping during order sync: {ex}")
 
         so.append("items", {
             "item_code": item_code,
