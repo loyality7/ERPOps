@@ -598,4 +598,33 @@ def get_product_catalogue():
             "shopify_id": shopify_id
         })
         
-    return result
+
+@frappe.whitelist()
+def toggle_shopify_status(enable):
+    """Enables or disables the Shopify integration."""
+    try:
+        enable = int(enable)
+        doc = frappe.get_doc("Shopify Setting")
+        doc.enable_shopify = enable
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+        return {"success": True, "enable_shopify": doc.enable_shopify}
+    except Exception as e:
+        frappe.log_error("Failed to toggle Shopify status", "ErpOps")
+        return {"success": False, "error": str(e)}
+
+@frappe.whitelist()
+def get_shopify_status():
+    """Returns the current status of the Shopify integration."""
+    try:
+        doc = frappe.get_doc("Shopify Setting")
+        # Get last sync info from logs if available
+        last_sync = frappe.db.get_value("Marketplace Alert", {}, "creation", order_by="creation desc") or "Never synced"
+        return {
+            "success": True,
+            "enable_shopify": doc.enable_shopify or 0,
+            "shopify_url": doc.shopify_url or "Not configured",
+            "last_sync": last_sync
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}

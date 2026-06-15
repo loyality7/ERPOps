@@ -440,6 +440,122 @@ window.render_erpops_orders = function(wrapper) {
     render_returns();
 };
 
+window.render_erpops_channels = function(wrapper) {
+    if (!wrapper) return;
+
+    // Render structure
+    $(wrapper).find('.layout-main-section').html(`
+		<div class="erpops-inventory-container">
+			<div class="inventory-header-desc">
+				<p class="text-muted">Configure and sync your external e-commerce sales channels.</p>
+			</div>
+			
+			<div class="row">
+				<div class="col-md-6">
+					<!-- Shopify Channel Card -->
+					<div class="inventory-card">
+						<div class="inventory-card-header">
+							<div class="header-left" style="display:flex; align-items:center; gap:8px;">
+								<i class="fa fa-shopping-bag text-primary" style="font-size: 20px;"></i>
+								<span class="card-title">Shopify Integration</span>
+							</div>
+							<div class="header-right" style="display:flex; align-items:center; gap:10px;">
+								<span style="font-size: 13px; font-weight: 500; color: #64748b;">Status:</span>
+								<label class="erpops-switch">
+									<input type="checkbox" id="shopify-toggle-enable">
+									<span class="erpops-slider round"></span>
+								</label>
+							</div>
+						</div>
+						<div style="padding: 24px;">
+							<table class="table" style="margin-bottom: 20px; font-size: 13px;">
+								<tbody>
+									<tr>
+										<td style="border-top:none; color:#64748b; width:40%; padding: 8px 0;">Channel Name</td>
+										<td style="border-top:none; font-weight:600; padding: 8px 0;">Shopify</td>
+									</tr>
+									<tr>
+										<td style="color:#64748b; padding: 8px 0;">Domain</td>
+										<td id="shopify-chan-domain" style="font-weight:600; padding: 8px 0;">Loading...</td>
+									</tr>
+									<tr>
+										<td style="color:#64748b; padding: 8px 0;">Last Sync</td>
+										<td id="shopify-chan-sync" class="text-muted" style="padding: 8px 0;">Loading...</td>
+									</tr>
+								</tbody>
+							</table>
+							<div style="display: flex; gap: 10px; justify-content: flex-end;">
+								<button class="btn btn-default btn-sm btn-shopify-settings"><i class="fa fa-cog"></i> Configure Settings</button>
+								<button class="btn btn-primary btn-sm btn-run-sync"><i class="fa fa-refresh"></i> Sync Now</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+    `);
+
+    // Fetch and bind
+    var load_chan_status = function() {
+        frappe.call({
+            method: 'erpops.erpops.api.get_shopify_status',
+            callback: function(r) {
+                if (r.message && r.message.success) {
+                    var status = r.message;
+                    $(wrapper).find('#shopify-toggle-enable').prop('checked', status.enable_shopify === 1);
+                    $(wrapper).find('#shopify-chan-domain').text(status.shopify_url);
+                    $(wrapper).find('#shopify-chan-sync').text(status.last_sync || 'Never synced');
+                }
+            }
+        });
+    };
+
+    // Toggle event
+    $(wrapper).find('#shopify-toggle-enable').on('change', function() {
+        var enable = $(this).prop('checked') ? 1 : 0;
+        frappe.call({
+            method: 'erpops.erpops.api.toggle_shopify_status',
+            args: { enable: enable },
+            callback: function(r) {
+                if (r.message && r.message.success) {
+                    frappe.show_alert({
+                        message: __('Shopify integration ' + (enable ? 'Enabled' : 'Disabled')),
+                        indicator: enable ? 'green' : 'red'
+                    });
+                } else {
+                    frappe.msgprint(__('Failed to update Shopify status.'));
+                }
+            }
+        });
+    });
+
+    // Configure settings redirection
+    $(wrapper).find('.btn-shopify-settings').on('click', function() {
+        frappe.set_route('Form', 'Shopify Setting');
+    });
+
+    // Sync now action
+    $(wrapper).find('.btn-run-sync').on('click', function() {
+        var $btn = $(this);
+        var original_html = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Syncing...');
+        frappe.call({
+            method: 'erpops.erpops.api.run_manual_sync',
+            callback: function(r) {
+                $btn.prop('disabled', false).html(original_html);
+                frappe.show_alert({
+                    message: __('Sync executed successfully'),
+                    indicator: 'green'
+                });
+                load_chan_status();
+            }
+        });
+    });
+
+    // Load initial
+    load_chan_status();
+};
+
 $(document).ready(function() {
     console.log("Alaiy OS Global Router loaded.");
     
@@ -452,24 +568,66 @@ $(document).ready(function() {
                 route_lower === 'workspace/inventory' || 
                 route_lower === 'inventory') {
                 
-                var wrapper = frappe.container.page.wrapper;
-                if (wrapper && $(wrapper).find('.erpops-inventory-container').length === 0) {
-                    console.log("Injecting custom Product Catalogue into Workspace layout...");
-                    frappe.require("/assets/erpops/css/inventory_page.css", function() {
-                        window.render_erpops_inventory(wrapper);
-                    });
-                }
+                var attempts = 0;
+                var interval = setInterval(function() {
+                    attempts++;
+                    var wrapper = frappe.container && frappe.container.page && frappe.container.page.wrapper;
+                    if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
+                        clearInterval(interval);
+                        if ($(wrapper).find('.erpops-inventory-container').length === 0) {
+                            console.log("Injecting custom Product Catalogue into Workspace layout...");
+                            frappe.require("/assets/erpops/css/inventory_page.css", function() {
+                                window.render_erpops_inventory(wrapper);
+                            });
+                        }
+                    }
+                    if (attempts > 50) {
+                        clearInterval(interval);
+                    }
+                }, 100);
+                
             } else if (route_lower === 'workspaces/orders' || 
                        route_lower === 'workspace/orders' || 
                        route_lower === 'orders') {
                 
-                var wrapper = frappe.container.page.wrapper;
-                if (wrapper && $(wrapper).find('.erpops-tabs-header').length === 0) {
-                    console.log("Injecting custom Orders & Returns panel into Workspace layout...");
-                    frappe.require("/assets/erpops/css/inventory_page.css", function() {
-                        window.render_erpops_orders(wrapper);
-                    });
-                }
+                var attempts = 0;
+                var interval = setInterval(function() {
+                    attempts++;
+                    var wrapper = frappe.container && frappe.container.page && frappe.container.page.wrapper;
+                    if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
+                        clearInterval(interval);
+                        if ($(wrapper).find('.erpops-tabs-header').length === 0) {
+                            console.log("Injecting custom Orders & Returns panel into Workspace layout...");
+                            frappe.require("/assets/erpops/css/inventory_page.css", function() {
+                                window.render_erpops_orders(wrapper);
+                            });
+                        }
+                    }
+                    if (attempts > 50) {
+                        clearInterval(interval);
+                    }
+                }, 100);
+            } else if (route_lower === 'workspaces/channels' || 
+                       route_lower === 'workspace/channels' || 
+                       route_lower === 'channels') {
+                
+                var attempts = 0;
+                var interval = setInterval(function() {
+                    attempts++;
+                    var wrapper = frappe.container && frappe.container.page && frappe.container.page.wrapper;
+                    if (wrapper && $(wrapper).find('.layout-main-section').length > 0) {
+                        clearInterval(interval);
+                        if ($(wrapper).find('#shopify-toggle-enable').length === 0) {
+                            console.log("Injecting custom Channels panel into Workspace layout...");
+                            frappe.require("/assets/erpops/css/inventory_page.css", function() {
+                                window.render_erpops_channels(wrapper);
+                            });
+                        }
+                    }
+                    if (attempts > 50) {
+                        clearInterval(interval);
+                    }
+                }, 100);
             }
         }
     };

@@ -311,6 +311,40 @@ def setup_sidebar_workspaces():
     ])
     ord_ws.save(ignore_permissions=True)
     
+    # 3. Setup Channels Workspace
+    if frappe.db.exists("Workspace", "Channels"):
+        chan_ws = frappe.get_doc("Workspace", "Channels")
+    else:
+        chan_ws = frappe.new_doc("Workspace")
+        chan_ws.name = "Channels"
+        chan_ws.label = "Channels"
+        chan_ws.title = "Channels"
+        chan_ws.icon = "open-source"
+        chan_ws.public = 1
+        chan_ws.module = "ErpOps"
+        
+    chan_ws.is_hidden = 0
+    chan_ws.sequence_id = 4
+    chan_ws.links = []
+    chan_ws.append("links", {
+        "type": "Card Break",
+        "label": "Channels View"
+    })
+    chan_ws.append("links", {
+        "link_type": "DocType",
+        "link_to": "Shopify Setting",
+        "label": "Shopify Settings",
+        "type": "Link",
+        "icon": "setting"
+    })
+    
+    chan_ws.shortcuts = []
+    chan_ws.content = json.dumps([
+        {"id": "chan_h1", "type": "header", "data": {"text": "<span class=\"h3\"><b>Channels</b></span>", "col": 12}},
+        {"id": "chan_sub", "type": "header", "data": {"text": "<span class=\"text-muted\">Manage integrations and external sales channels.</span>", "col": 12}}
+    ])
+    chan_ws.save(ignore_permissions=True)
+    
     frappe.db.commit()
 
 
