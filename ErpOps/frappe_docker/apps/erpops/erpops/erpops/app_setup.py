@@ -306,7 +306,7 @@ def setup_shopify_integration():
                 continue
                 
         if not host_url:
-            host_url = os.environ.get("SHOPIFY_NGROK_URL") or "https://your-ngrok-domain.ngrok-free.app"
+            host_url = os.environ.get("SHOPIFY_NGROK_URL") or getattr(frappe.conf, "shopify_ngrok_url", None) or "https://your-ngrok-domain.ngrok-free.app"
             
         print(f"Automatic Shopify setup: Registering webhooks pointing to {host_url}...")
         from erpops.erpops.shopify.shopify_client import ShopifyClient
