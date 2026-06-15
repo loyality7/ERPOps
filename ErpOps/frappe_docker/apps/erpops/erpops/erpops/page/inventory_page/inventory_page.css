@@ -84,7 +84,7 @@
 	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
-.search-icon {
+.search-box-container .search-icon {
 	position: absolute;
 	left: 10px;
 	top: 50%;

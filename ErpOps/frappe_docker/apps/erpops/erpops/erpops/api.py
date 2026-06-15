@@ -556,8 +556,9 @@ def get_product_catalogue():
             FROM `tabItem` i
             LEFT JOIN `tabItem` p_item ON i.variant_of = p_item.name
             LEFT JOIN `tabBin` b ON i.name = b.item_code
-            WHERE i.item_group = 'Shopify Items' 
-               OR i.name IN (SELECT erpnext_item_code FROM `tabEcommerce Item` WHERE integration = 'Shopify')
+            WHERE (i.item_group = 'Shopify Items' 
+               OR i.name IN (SELECT erpnext_item_code FROM `tabEcommerce Item` WHERE integration = 'Shopify'))
+               AND (i.variant_of IS NULL OR i.variant_of = '')
             GROUP BY i.name
             ORDER BY i.creation DESC
         """, as_dict=True)
