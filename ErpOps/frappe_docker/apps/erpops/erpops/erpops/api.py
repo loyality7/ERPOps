@@ -558,13 +558,13 @@ def get_product_catalogue():
     # Get all Shopify integrations mapping
     mappings = frappe.get_all(
         "Ecommerce Item",
-        fields=["erpnext_item_code", "ecommerce_item_id", "integration"]
+        fields=["erpnext_item_code", "integration_item_code", "integration"]
     )
     
     mapping_map = {}
     for m in mappings:
         if m.integration == "Shopify":
-            mapping_map[m.erpnext_item_code] = m.ecommerce_item_id
+            mapping_map[m.erpnext_item_code] = m.integration_item_code
             
     # Calculate variants count
     templates = [i.item_code for i in items if i.has_variants]
