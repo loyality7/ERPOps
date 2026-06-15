@@ -105,7 +105,7 @@ def sync_shopify_orders():
                     created += 1
                     frappe.db.commit()
                 except Exception as ord_err:
-                    frappe.log_error(f"Failed to sync Shopify Order {order.get('name')}: {ord_err}", "Shopify Order Sync")
+                    frappe.log_error(title="Shopify Order Sync", message=f"Failed to sync Shopify Order {order.get('name')}: {ord_err}")
 
         try:
             frappe.db.set_single_value("Shopify Setting", "last_inventory_sync", frappe.utils.now_datetime())
@@ -117,7 +117,7 @@ def sync_shopify_orders():
             frappe.logger().info(f"Shopify sync: created {created} Sales Orders")
 
     except Exception as e:
-        frappe.log_error(f"Shopify order sync failed: {e}", "Shopify Order Sync")
+        frappe.log_error(title="Shopify Order Sync", message=f"Shopify order sync failed: {e}")
 
 
 def sync_shopify_products():
@@ -187,11 +187,11 @@ def sync_shopify_products():
                             except Exception as eco_err:
                                 frappe.logger().warn(f"Failed to create Ecommerce Item mapping: {eco_err}")
                 except Exception as var_err:
-                    frappe.log_error(f"Failed to sync variant {v.get('id')}: {var_err}", "Shopify Product Sync")
+                    frappe.log_error(title="Shopify Product Sync", message=f"Failed to sync variant {v.get('id')}: {var_err}")
 
         frappe.db.commit()
     except Exception as e:
-        frappe.log_error(f"Shopify product sync failed: {e}", "Shopify Product Sync")
+        frappe.log_error(title="Shopify Product Sync", message=f"Shopify product sync failed: {e}")
 
 
 def _create_sales_order_from_shopify(order):
@@ -268,7 +268,7 @@ def _create_sales_order_from_shopify(order):
                         frappe.db.set_value("Ecommerce Item", existing_mapping.name, "erpnext_item_code", item_code)
                         frappe.db.commit()
                     except Exception as upd_err:
-                        frappe.log_error(f"Failed to update Ecommerce Item mapping: {upd_err}", "Shopify Sync")
+                        frappe.log_error(title="Shopify Sync", message=f"Failed to update Ecommerce Item mapping: {upd_err}")
             else:
                 try:
                     eco = frappe.new_doc("Ecommerce Item")
@@ -277,7 +277,7 @@ def _create_sales_order_from_shopify(order):
                     eco.integration = "Shopify"
                     eco.insert(ignore_permissions=True, ignore_if_duplicate=True)
                 except Exception as ex:
-                    frappe.log_error(f"Failed to auto-create Ecommerce Item mapping during order sync: {ex}", "Shopify Sync")
+                    frappe.log_error(title="Shopify Sync", message=f"Failed to auto-create Ecommerce Item mapping during order sync: {ex}")
 
         so.append("items", {
             "item_code": item_code,
