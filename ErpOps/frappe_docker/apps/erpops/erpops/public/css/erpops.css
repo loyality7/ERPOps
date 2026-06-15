@@ -478,7 +478,8 @@ input:checked + .erpops-slider:before {
 .sidebar-items,
 .sidebar-section,
 .sidebar-item-container,
-.nested-container {
+.nested-container,
+.sidebar-child-item {
 	background-color: transparent !important;
 	background: transparent !important;
 }

@@ -196,12 +196,23 @@ def hide_standard_workspaces():
         if frappe.db.exists("Workspace", name):
             frappe.db.set_value("Workspace", name, "is_hidden", 1)
             
+    # Ensure Myntra and Ajio workspaces are deleted so they do not clutter the database
+    for name in ["Myntra", "Ajio"]:
+        if frappe.db.exists("Workspace", name):
+            frappe.delete_doc("Workspace", name, ignore_permissions=True)
+            
     # Make sure custom workspaces are visible, public, and flat
     for name in ["ErpOps", "Inventory", "Orders", "Returns", "Analytics", "Channels"]:
         if frappe.db.exists("Workspace", name):
             frappe.db.set_value("Workspace", name, "is_hidden", 0)
             frappe.db.set_value("Workspace", name, "public", 1)
             frappe.db.set_value("Workspace", name, "parent_page", "")
+            
+    # Nest Shopify under Channels
+    if frappe.db.exists("Workspace", "Shopify"):
+        frappe.db.set_value("Workspace", "Shopify", "is_hidden", 0)
+        frappe.db.set_value("Workspace", "Shopify", "public", 1)
+        frappe.db.set_value("Workspace", "Shopify", "parent_page", "Channels")
         
     frappe.db.commit()
     
@@ -336,13 +347,10 @@ def setup_sidebar_workspaces():
     ret_ws.module = "ErpOps"
     ret_ws.parent_page = ""
     ret_ws.is_hidden = 0
-    ret_ws.sequence_id = 3
+    ret_ws.sequence_id = 4
     ret_ws.links = []
     ret_ws.shortcuts = []
-    ret_ws.content = json.dumps([
-        {"id": "ret_h1", "type": "header", "data": {"text": "<span class=\"h3\"><b>Returns</b></span>", "col": 12}},
-        {"id": "ret_sub", "type": "header", "data": {"text": "<span class=\"text-muted\">Manage and view order returns and refunds.</span>", "col": 12}}
-    ])
+    ret_ws.content = json.dumps([])
     ret_ws.save(ignore_permissions=True)
 
     # 2c. Setup Analytics Workspace (Flat in sidebar)
@@ -364,10 +372,7 @@ def setup_sidebar_workspaces():
     ana_ws.sequence_id = 5
     ana_ws.links = []
     ana_ws.shortcuts = []
-    ana_ws.content = json.dumps([
-        {"id": "ana_h1", "type": "header", "data": {"text": "<span class=\"h3\"><b>Analytics</b></span>", "col": 12}},
-        {"id": "ana_sub", "type": "header", "data": {"text": "<span class=\"text-muted\">Real-time sales velocity and channel performance insights.</span>", "col": 12}}
-    ])
+    ana_ws.content = json.dumps([])
     ana_ws.save(ignore_permissions=True)
     
     # 3. Setup Channels Workspace
@@ -384,7 +389,7 @@ def setup_sidebar_workspaces():
     chan_ws.parent_page = ""
     chan_ws.icon = "integrations"
     chan_ws.is_hidden = 0
-    chan_ws.sequence_id = 4
+    chan_ws.sequence_id = 7
     chan_ws.links = []
     chan_ws.append("links", {
         "type": "Card Break",
@@ -418,9 +423,9 @@ def setup_sidebar_workspaces():
         shop_ws.module = "ErpOps"
         
     shop_ws.icon = "sell"
-    shop_ws.parent_page = ""
-    shop_ws.is_hidden = 1
-    shop_ws.sequence_id = 1
+    shop_ws.parent_page = "Channels"
+    shop_ws.is_hidden = 0
+    shop_ws.sequence_id = 6
     shop_ws.links = []
     shop_ws.shortcuts = []
     shop_ws.content = json.dumps([

@@ -546,15 +546,18 @@ def get_product_catalogue():
             SELECT
                 i.name AS item_code,
                 i.item_name,
-                i.image,
-                i.brand,
+                COALESCE(i.image, p_item.image) AS image,
+                COALESCE(i.brand, p_item.brand) AS brand,
                 i.has_variants,
                 i.variant_of,
                 i.item_group,
                 SUM(COALESCE(b.actual_qty, 0)) AS actual_qty,
                 SUM(COALESCE(b.actual_qty - b.reserved_qty, 0)) AS available_qty
             FROM `tabItem` i
+            LEFT JOIN `tabItem` p_item ON i.variant_of = p_item.name
             LEFT JOIN `tabBin` b ON i.name = b.item_code
+            WHERE i.item_group = 'Shopify Items' 
+               OR i.name IN (SELECT erpnext_item_code FROM `tabEcommerce Item` WHERE integration = 'Shopify')
             GROUP BY i.name
             ORDER BY i.creation DESC
         """, as_dict=True)
@@ -651,3 +654,38 @@ def get_shopify_status():
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+@frappe.whitelist()
+def get_sales_orders():
+    """Returns list of Sales Orders for Alaiy OS orders view."""
+    try:
+        orders = frappe.db.sql("""
+            SELECT
+                so.name AS id,
+                so.customer_name AS customer,
+                so.transaction_date AS date,
+                so.grand_total AS total,
+                COALESCE(so.custom_payment_status, 'Unpaid') AS payment,
+                so.status AS fulfillment,
+                COALESCE(so.custom_channel, 'ERPNext') AS channel
+            FROM `tabSales Order` so
+            ORDER BY so.creation DESC
+            LIMIT 100
+        """, as_dict=True)
+        
+        # Format values nicely
+        for o in orders:
+            o.total = f"₹{o.total:,.2f}"
+            o.date = str(o.date)
+            # Standardize status labels
+            if o.fulfillment == "Draft":
+                o.fulfillment = "Processing"
+            elif o.fulfillment == "Completed":
+                o.fulfillment = "Fulfilled"
+            elif o.fulfillment == "Cancelled":
+                o.fulfillment = "Returned"
+                
+        return orders
+    except Exception as e:
+        frappe.log_error(f"Error fetching sales orders: {e}", "ErpOps API")
+        return []

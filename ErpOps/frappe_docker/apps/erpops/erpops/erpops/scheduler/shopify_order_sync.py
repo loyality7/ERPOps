@@ -110,7 +110,24 @@ def _create_sales_order_from_shopify(order):
     so.custom_channel = "shopify"
 
     for line in order.get("lineItems", {}).get("nodes", []):
-        item_code = line.get("sku") or line.get("title", "UNKNOWN")
+        variant_id = line.get("variant", {}).get("id") if line.get("variant") else ""
+        product_id = line.get("product", {}).get("id") if line.get("product") else ""
+        raw_shopify_id = variant_id or product_id or ""
+        clean_shopify_id = raw_shopify_id.split("/")[-1] if "/" in raw_shopify_id else raw_shopify_id
+
+        # Try to resolve ERPNext item code using mapping, SKU, or fallback ID
+        item_code = None
+        if clean_shopify_id:
+            item_code = frappe.db.get_value("Ecommerce Item", {"integration_item_code": clean_shopify_id, "integration": "Shopify"}, "erpnext_item_code")
+
+        if not item_code:
+            item_code = line.get("sku")
+
+        if not item_code and clean_shopify_id:
+            item_code = f"SPY-{clean_shopify_id}"
+
+        if not item_code:
+            item_code = line.get("title", "UNKNOWN")
 
         if not frappe.db.exists("Item", item_code):
             item = frappe.new_doc("Item")
@@ -121,12 +138,6 @@ def _create_sales_order_from_shopify(order):
             item.stock_uom = "Nos"
             item.flags.ignore_mandatory = True
             item.insert(ignore_permissions=True)
-
-        # Build Ecommerce Item mapping on the fly during order import
-        variant_id = line.get("variant", {}).get("id") if line.get("variant") else ""
-        product_id = line.get("product", {}).get("id") if line.get("product") else ""
-        raw_shopify_id = variant_id or product_id or ""
-        clean_shopify_id = raw_shopify_id.split("/")[-1] if "/" in raw_shopify_id else raw_shopify_id
 
         if clean_shopify_id and not frappe.db.exists("Ecommerce Item", {"erpnext_item_code": item_code, "integration": "Shopify"}):
             try:

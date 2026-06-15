@@ -399,13 +399,30 @@ window.render_erpops_orders = function(wrapper) {
 		</div>
     `);
 
-    // Realistic dummy data
-    var orders = [
-        { id: "ORD-1001", customer: "John Doe", date: "2026-06-15", total: "₹150.00", payment: "Paid", fulfillment: "Fulfilled", channel: "Shopify" },
-        { id: "ORD-1002", customer: "Jane Smith", date: "2026-06-15", total: "₹89.50", payment: "Paid", fulfillment: "Processing", channel: "Shopify" },
-        { id: "ORD-1003", customer: "Bob Johnson", date: "2026-06-14", total: "₹240.00", payment: "Unpaid", fulfillment: "Processing", channel: "Wholesale" },
-        { id: "ORD-1004", customer: "Alice Williams", date: "2026-06-13", total: "₹120.00", payment: "Paid", fulfillment: "Returned", channel: "Shopify" }
-    ];
+    var orders = [];
+
+    var load_orders = function() {
+        var tbody = $(wrapper).find('#orders-table-body');
+        tbody.html(`
+            <tr>
+                <td colspan="8" class="text-center py-4">
+                    <i class="fa fa-spinner fa-spin fa-lg text-muted"></i> Loading orders...
+                </td>
+            </tr>
+        `);
+        frappe.call({
+            method: 'erpops.erpops.api.get_sales_orders',
+            callback: function(r) {
+                if (r.message) {
+                    orders = r.message;
+                    render_orders(orders);
+                } else {
+                    tbody.html('<tr><td colspan="8" class="text-center py-4">No orders found.</td></tr>');
+                    $(wrapper).find('#orders-count').text('0 orders');
+                }
+            }
+        });
+    };
 
     var returns = [
         { id: "RET-1001", order_id: "ORD-1004", product: "Alaiy Premium Hoodie", amount: "₹120.00", reason: "Size too large", status: "Approved" },
@@ -482,11 +499,11 @@ window.render_erpops_orders = function(wrapper) {
     });
 
     $(wrapper).find('.btn-refresh-orders').on('click', function() {
-        render_orders(orders);
+        load_orders();
     });
 
     // Initial populate
-    render_orders(orders);
+    load_orders();
     render_returns();
 };
 
