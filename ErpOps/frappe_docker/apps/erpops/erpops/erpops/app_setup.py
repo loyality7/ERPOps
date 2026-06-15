@@ -463,4 +463,25 @@ def setup_branding():
     except Exception as e:
         print(f"  - Failed to update Website Settings: {e}")
         
+    # 4. Create custom translations to replace ERPNext with Alaiy OS globally
+    try:
+        translations = [
+            ("ERPNext", "Alaiy OS"),
+            ("erpnext", "alaiy os"),
+            ("Welcome to ERPNext", "Welcome to Alaiy OS"),
+            ("ERPNext Settings", "Alaiy OS Settings"),
+            ("ERPNext Integrations", "Alaiy OS Integrations"),
+            ("Let's begin your journey with ERPNext", "Let's begin your journey with Alaiy OS")
+        ]
+        for source, target in translations:
+            if not frappe.db.exists("Translation", {"source_text": source, "language": "en"}):
+                t = frappe.new_doc("Translation")
+                t.language = "en"
+                t.source_text = source
+                t.translated_text = target
+                t.save(ignore_permissions=True)
+                print(f"  - Translation created: '{source}' -> '{target}'")
+    except Exception as e:
+        print(f"  - Failed to update Translation table: {e}")
+        
     frappe.db.commit()
