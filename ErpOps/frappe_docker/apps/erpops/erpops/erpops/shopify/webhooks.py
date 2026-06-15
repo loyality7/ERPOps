@@ -18,8 +18,10 @@ def get_customer_group():
         
     if group and frappe.db.exists("Customer Group", {"name": group, "is_group": 0}):
         return group
-    # Check Selling Settings default
-    group = frappe.db.get_single_value("Selling Settings", "customer_group")
+    # Check Selling Settings default safely
+    group = None
+    if frappe.get_meta("Selling Settings").has_field("customer_group"):
+        group = frappe.db.get_single_value("Selling Settings", "customer_group")
     if group and frappe.db.exists("Customer Group", {"name": group, "is_group": 0}):
         return group
     # Fallback to standard non-group Customer Group
@@ -38,8 +40,10 @@ def get_item_group():
         
     if group and frappe.db.exists("Item Group", {"name": group, "is_group": 0}):
         return group
-    # Check Stock Settings default
-    group = frappe.db.get_single_value("Stock Settings", "default_item_group")
+    # Check Stock Settings default safely
+    group = None
+    if frappe.get_meta("Stock Settings").has_field("default_item_group"):
+        group = frappe.db.get_single_value("Stock Settings", "default_item_group")
     if group and frappe.db.exists("Item Group", {"name": group, "is_group": 0}):
         return group
     # Fallback to standard non-group Item Group
