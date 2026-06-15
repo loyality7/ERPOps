@@ -775,6 +775,19 @@ def get_sales_orders():
 @frappe.whitelist()
 def show_errors():
     """Print the last 10 Error Log entries directly to console."""
+    try:
+        from erpops.erpops.shopify.shopify_client import ShopifyClient
+        c = ShopifyClient()
+        print('DIAGNOSTIC - Shopify Endpoint:', c.endpoint)
+        print('DIAGNOSTIC - Token length:', len(c.token) if c.token else 0)
+        try:
+            orders = c.get_orders(since='2026-05-15')
+            print('DIAGNOSTIC - Shopify Orders count since May 15:', len(orders))
+        except Exception as api_err:
+            print('DIAGNOSTIC - Shopify API Query failed:', api_err)
+    except Exception as general_err:
+        print('DIAGNOSTIC - General load failed:', general_err)
+    print("--- Database Error Logs ---")
     logs = frappe.db.get_all("Error Log", fields=["method", "error"], limit=10, order_by="creation desc")
     for d in logs:
         print(f"METHOD: {d.method}\nERROR: {d.error}\n---")
