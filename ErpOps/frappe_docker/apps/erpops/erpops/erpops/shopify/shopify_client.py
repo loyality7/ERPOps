@@ -67,13 +67,21 @@ class ShopifyClient:
 
         raise Exception("Max retries exceeded for Shopify GraphQL request")
 
-    def get_orders(self, limit=50, status="open", since=None):
+    def get_orders(self, limit=50, status="any", since=None, to_date=None):
         """Return list of order dicts."""
-        query_filter = f"status:{status}"
+        filters = []
+        if status and status != "any":
+            filters.append(f"status:{status}")
         if since:
             if not isinstance(since, str):
                 since = since.strftime("%Y-%m-%dT%H:%M:%SZ") if hasattr(since, "strftime") else str(since)
-            query_filter += f' created_at:>"{since}"'
+            filters.append(f'created_at:>"{since}"')
+        if to_date:
+            if not isinstance(to_date, str):
+                to_date = to_date.strftime("%Y-%m-%dT%H:%M:%SZ") if hasattr(to_date, "strftime") else str(to_date)
+            filters.append(f'created_at:<"{to_date}"')
+
+        query_filter = " AND ".join(filters) if filters else ""
 
         gql = """
         query GetOrders($limit: Int!, $query: String!) {

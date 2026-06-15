@@ -42,12 +42,22 @@ def sync_shopify_orders():
         from erpops.erpops.shopify.shopify_client import ShopifyClient
         shopify = ShopifyClient()
 
-        last_sync = (
-            frappe.db.get_single_value("Shopify Setting", "last_inventory_sync")
-            or frappe.utils.add_days(frappe.utils.now_datetime(), -1)
-        )
+        # Check if user requested syncing old orders from UI
+        sync_old = frappe.db.get_single_value("Shopify Setting", "custom_sync_old_orders") or 0
+        from_date = frappe.db.get_single_value("Shopify Setting", "custom_from_date")
+        to_date = frappe.db.get_single_value("Shopify Setting", "custom_to_date")
 
-        orders = shopify.get_orders(since=last_sync)
+        if sync_old and from_date:
+            orders = shopify.get_orders(since=from_date, to_date=to_date)
+            # Reset the checkbox in the database so it only runs once
+            frappe.db.set_single_value("Shopify Setting", "custom_sync_old_orders", 0)
+            frappe.db.commit()
+        else:
+            last_sync = (
+                frappe.db.get_single_value("Shopify Setting", "last_inventory_sync")
+                or frappe.utils.add_days(frappe.utils.now_datetime(), -30)
+            )
+            orders = shopify.get_orders(since=last_sync)
 
         created = 0
         for order in orders:
