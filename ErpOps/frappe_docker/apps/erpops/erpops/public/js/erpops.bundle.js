@@ -357,139 +357,15 @@ window.render_erpops_orders = function(wrapper) {
 
 			<!-- Tab 2: Returns Content -->
 			<div class="erpops-tab-content" id="tab-returns-content">
-				<div class="inventory-card">
-					<div class="inventory-card-header">
-						<div class="header-left">
-							<span class="card-title">Order Returns</span>
-							<span class="badge badge-info" id="returns-count">2 returns</span>
-						</div>
-						<div class="header-right">
-							<button class="btn btn-default btn-sm"><i class="fa fa-refresh"></i></button>
-							<button class="btn btn-default btn-sm"><i class="fa fa-download"></i> Export</button>
-						</div>
-					</div>
-
-					<div class="inventory-table-responsive">
-						<table class="table erpops-custom-table">
-							<thead>
-								<tr>
-									<th>RETURN ID</th>
-									<th>ORDER ID</th>
-									<th>PRODUCT</th>
-									<th>REFUND AMOUNT</th>
-									<th>REASON</th>
-									<th>STATUS</th>
-								</tr>
-							</thead>
-							<tbody id="returns-table-body">
-								<!-- Dynamically populated -->
-							</tbody>
-						</table>
-					</div>
+				<div class="inventory-card text-center py-5">
+					<p class="text-muted" style="font-size: 14px;">No returns data available.</p>
 				</div>
 			</div>
 
 			<!-- Tab 3: Analytics Content -->
 			<div class="erpops-tab-content" id="tab-analytics-content">
-				<!-- KPI Cards -->
-				<div class="analytics-grid">
-					<div class="analytics-card">
-						<div class="card-metric-label">Sales Today</div>
-						<div class="card-metric-value">₹1,245.00</div>
-						<div class="card-metric-trend trend-up"><i class="fa fa-arrow-up"></i> +12.4% vs yesterday</div>
-					</div>
-					<div class="analytics-card">
-						<div class="card-metric-label">Total Orders</div>
-						<div class="card-metric-value">14</div>
-						<div class="card-metric-trend trend-up"><i class="fa fa-arrow-up"></i> +8.3% vs last week</div>
-					</div>
-					<div class="analytics-card">
-						<div class="card-metric-label">Return Rate</div>
-						<div class="card-metric-value">2.1%</div>
-						<div class="card-metric-trend trend-down"><i class="fa fa-arrow-down"></i> -0.4% this month</div>
-					</div>
-					<div class="analytics-card">
-						<div class="card-metric-label">Avg Order Value</div>
-						<div class="card-metric-value">₹88.92</div>
-						<div class="card-metric-trend trend-up"><i class="fa fa-arrow-up"></i> +4.1% overall</div>
-					</div>
-				</div>
-
-				<!-- Visual analytics graphs & progress bars -->
-				<div class="row">
-					<div class="col-md-6">
-						<div class="inventory-card">
-							<div class="inventory-card-header">
-								<span class="card-title">Sales By Channel</span>
-							</div>
-							<div style="padding: 24px;">
-								<div class="progress-list-item">
-									<div class="progress-list-label">
-										<span>Shopify Store</span>
-										<span><b>₹845.00 (68%)</b></span>
-									</div>
-									<div class="progress-bar-bg">
-										<div class="progress-bar-fill" style="width: 68%; background-color: #3b82f6;"></div>
-									</div>
-								</div>
-								<div class="progress-list-item">
-									<div class="progress-list-label">
-										<span>Wholesale / B2B</span>
-										<span><b>₹300.00 (24%)</b></span>
-									</div>
-									<div class="progress-bar-bg">
-										<div class="progress-bar-fill" style="width: 24%; background-color: #10b981;"></div>
-									</div>
-								</div>
-								<div class="progress-list-item">
-									<div class="progress-list-label">
-										<span>Retail / POS</span>
-										<span><b>₹100.00 (8%)</b></span>
-									</div>
-									<div class="progress-bar-bg">
-										<div class="progress-bar-fill" style="width: 8%; background-color: #f59e0b;"></div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					
-					<div class="col-md-6">
-						<div class="inventory-card">
-							<div class="inventory-card-header">
-								<span class="card-title">Common Return Reasons</span>
-							</div>
-							<div style="padding: 24px;">
-								<div class="progress-list-item">
-									<div class="progress-list-label">
-										<span>Size Too Large / Small</span>
-										<span><b>62%</b></span>
-									</div>
-									<div class="progress-bar-bg">
-										<div class="progress-bar-fill" style="width: 62%; background-color: #ec4899;"></div>
-									</div>
-								</div>
-								<div class="progress-list-item">
-									<div class="progress-list-label">
-										<span>Incorrect Item Shipped</span>
-										<span><b>23%</b></span>
-									</div>
-									<div class="progress-bar-bg">
-										<div class="progress-bar-fill" style="width: 23%; background-color: #8b5cf6;"></div>
-									</div>
-								</div>
-								<div class="progress-list-item">
-									<div class="progress-list-label">
-										<span>Fabric Defect / Damaged</span>
-										<span><b>15%</b></span>
-									</div>
-									<div class="progress-bar-bg">
-										<div class="progress-bar-fill" style="width: 15%; background-color: #64748b;"></div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
+				<div class="inventory-card text-center py-5">
+					<p class="text-muted" style="font-size: 14px;">No analytics data available.</p>
 				</div>
 			</div>
 		</div>
@@ -520,11 +396,6 @@ window.render_erpops_orders = function(wrapper) {
         });
     };
 
-    var returns = [
-        { id: "RET-1001", order_id: "ORD-1004", product: "Alaiy Premium Hoodie", amount: "₹120.00", reason: "Size too large", status: "Approved" },
-        { id: "RET-1002", order_id: "ORD-0995", product: "Alaiy Tee Cream", amount: "₹45.00", reason: "Fabric defect", status: "Pending" }
-    ];
-
     // Render tables
     var render_orders = function(list) {
         var tbody = $(wrapper).find('#orders-table-body');
@@ -547,26 +418,6 @@ window.render_erpops_orders = function(wrapper) {
 					<td><span class="status-pill ${pay_class}">${o.payment}</span></td>
 					<td><span class="status-pill ${ful_class}">${o.fulfillment}</span></td>
 					<td><span class="badge" style="background:#f1f5f9; color:#475569;">${o.channel}</span></td>
-				</tr>
-            `);
-        });
-    };
-
-    var render_returns = function() {
-        var tbody = $(wrapper).find('#returns-table-body');
-        tbody.empty();
-        $(wrapper).find('#returns-count').text(`${returns.length} returns`);
-
-        returns.forEach(function(r) {
-            var status_class = r.status === 'Approved' ? 'pill-paid' : 'pill-processing';
-            tbody.append(`
-				<tr>
-					<td><b>${r.id}</b></td>
-					<td><a href="#Form/Sales Order/${r.order_id}"><b>${r.order_id}</b></a></td>
-					<td>${r.product}</td>
-					<td><b>${r.amount}</b></td>
-					<td class="text-muted">${r.reason}</td>
-					<td><span class="status-pill ${status_class}">${r.status}</span></td>
 				</tr>
             `);
         });
@@ -600,7 +451,6 @@ window.render_erpops_orders = function(wrapper) {
 
     // Initial populate
     load_orders();
-    render_returns();
 };
 
 window.render_erpops_returns = function(wrapper) {
